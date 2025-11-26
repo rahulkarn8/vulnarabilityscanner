@@ -1,0 +1,163 @@
+/* ROOT FIX — Ensures full-height layout */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* MAIN APP WRAPPER */
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+/* DASHBOARD WRAPPER MUST FILL HEIGHT */
+.dashboard-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+/* TWO-COLUMN WRAPPER */
+.dashboard-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+  height: 100%;
+  align-items: stretch;
+}
+
+/* LEFT SIDEBAR */
+.sidebar {
+  width: 300px;
+  background: #1e293b;
+  border-right: 1px solid #334155;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  align-self: stretch;
+}
+
+/* RIGHT SIDE MAIN CONTENT (Code + Vulnerabilities) */
+.main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+  height: 100%;
+  align-self: stretch;
+  align-items: stretch;
+}
+
+/* CODE SECTION (Left Panel) */
+.code-section {
+  flex: 1.5;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #334155;
+  overflow: hidden;
+  min-height: 0;
+  height: 100%;
+  align-self: stretch;
+}
+
+/* VULNERABILITY SECTION (Right Panel) — FIXED */
+.vulnerability-section {
+  flex: 1.5;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #1e293b;
+  min-height: 0;
+  height: 100%;
+  align-self: stretch;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #0f172a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  gap: 1rem;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #334155;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-overlay p {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* -------------------------------- */
+/*   VULNERABILITY LIST STYLING     */
+/* -------------------------------- */
+
+.vulnerability-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: #1e293b;
+  overflow: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.vulnerability-list-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #334155;
+  background: #0f172a;
+  flex-shrink: 0;
+}
+
+.vulnerability-list-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.vulnerability-list-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  width: 100%;
+  background: #1e293b;
+  gap: 1.5rem;
+  color: #e2e8f0;
+}

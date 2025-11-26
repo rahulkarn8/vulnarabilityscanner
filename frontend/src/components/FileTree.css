@@ -1,0 +1,193 @@
+.file-tree {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #1e293b;
+  color: #e2e8f0;
+  overflow: hidden;
+  min-height: 0;
+  max-height: 100%;
+}
+
+.file-tree-header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #334155;
+  background: #0f172a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.file-tree-header h2 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.file-count {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.file-tree-empty {
+  padding: 2rem;
+  text-align: center;
+  color: #64748b;
+}
+
+.file-tree-empty .hint {
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.file-tree-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.25rem 0;
+  font-size: 0.875rem;
+  min-height: 0;
+}
+
+.file-tree-folder {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.5rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+  color: #cbd5e1;
+}
+
+.file-tree-folder:hover {
+  background: #334155;
+}
+
+.folder-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #94a3b8;
+}
+
+.folder-name {
+  font-size: 0.875rem;
+  color: #cbd5e1;
+}
+
+.file-tree-children {
+  margin-left: 0;
+}
+
+.file-tree-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.375rem 0.5rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  user-select: none;
+}
+
+.file-tree-item:hover {
+  background: #334155;
+}
+
+.file-tree-item.selected {
+  background: #1e40af;
+  color: white;
+}
+
+.file-tree-item.selected .file-name {
+  color: white;
+}
+
+.file-tree-item-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.file-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
+}
+
+.file-name {
+  font-size: 0.875rem;
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-tree-item-badge {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+
+.vuln-count {
+  padding: 0.125rem 0.375rem;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+}
+
+.vuln-count.critical {
+  background: #dc2626;
+  color: white;
+}
+
+.vuln-count.high {
+  background: #ea580c;
+  color: white;
+}
+
+.vuln-count.medium {
+  background: #f59e0b;
+  color: white;
+}
+
+.vuln-count.low {
+  background: #3b82f6;
+  color: white;
+}
+
+.safe-icon {
+  color: #10b981;
+}
+
+.error-icon {
+  color: #ef4444;
+}
+
+/* Scrollbar styling */
+.file-tree-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.file-tree-list::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+.file-tree-list::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 4px;
+}
+
+.file-tree-list::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}

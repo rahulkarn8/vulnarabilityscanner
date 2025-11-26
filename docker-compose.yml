@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database (optional - uncomment to use PostgreSQL instead of SQLite)
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: codescanner-postgres
+  #   environment:
+  #     POSTGRES_USER: scanner
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_in_production}
+  #     POSTGRES_DB: vulnerabilityscanner
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+  #   restart: unless-stopped
+  #   networks:
+  #     - codescanner-network
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U scanner"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: codescanner-backend
+    ports:
+      - "8000:8000"
+    environment:
+      # Database: Use your existing DATABASE_URL (PostgreSQL/MySQL) or leave unset for SQLite
+      - DATABASE_URL=${DATABASE_URL:-}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+      - GITHUB_REDIRECT_URI=https://stratum.daifend.ai/auth/github/callback
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REDIRECT_URI=https://stratum.daifend.ai/auth/google/callback
+      - FRONTEND_URL=https://stratum.daifend.ai
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
+      - STRIPE_PRICE_ID_BASIC=${STRIPE_PRICE_ID_BASIC:-}
+      - STRIPE_PRICE_ID_PRO=${STRIPE_PRICE_ID_PRO:-}
+      # Admin authentication (optional)
+      - ADMIN_API_KEY=${ADMIN_API_KEY:-}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+      # Support email configuration
+      - SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - FROM_EMAIL=${FROM_EMAIL:-}
+      - SUPPORT_EMAIL=${SUPPORT_EMAIL:-support@daifend.com}
+    volumes:
+      # Only needed if using SQLite (default) - comment out if using remote database
+      - ./backend/auth.db:/app/auth.db
+      - ./backend/data:/app/data
+    restart: unless-stopped
+    networks:
+      - codescanner-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/docs')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Uncomment if using PostgreSQL:
+    # depends_on:
+    #   postgres:
+    #     condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: codescanner-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - codescanner-network
+
+networks:
+  codescanner-network:
+    driver: bridge
+
+# Uncomment if using PostgreSQL:
+# volumes:
+#   postgres_data:
+
