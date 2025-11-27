@@ -3,26 +3,26 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
-      - '-f'
-      - 'backend/Dockerfile'   # <-- explicitly use backend Dockerfile
       - '-t'
       - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:${SHORT_SHA}'
       - '-t'
       - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:latest'
-      - '.'                    # <-- build context is repo root
+      - '-f'
+      - 'Dockerfile'
+      - 'backend'              # <-- build context is backend directory
     id: 'build-backend'
 
   # Build frontend image
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
-      - '-f'
-      - 'frontend/Dockerfile'  # <-- explicitly use frontend Dockerfile
       - '-t'
       - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:${SHORT_SHA}'
       - '-t'
       - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:latest'
-      - '.'                    # <-- build context is repo root
+      - '-f'
+      - 'Dockerfile'
+      - 'frontend'             # <-- build context is frontend directory
     id: 'build-frontend'
 
   # Push backend image
@@ -69,11 +69,13 @@ steps:
       - '--timeout'
       - '300'
       - '--set-env-vars'
-      - 'DATABASE_URL=${_DATABASE_URL},JWT_SECRET_KEY=${_JWT_SECRET_KEY},GITHUB_CLIENT_ID=${_GITHUB_CLIENT_ID},GITHUB_CLIENT_SECRET=${_GITHUB_CLIENT_SECRET},GOOGLE_CLIENT_ID=${_GOOGLE_CLIENT_ID},GOOGLE_CLIENT_SECRET=${_GOOGLE_CLIENT_SECRET},FRONTEND_URL=${_FRONTEND_URL},OPENAI_API_KEY=${_OPENAI_API_KEY},STRIPE_SECRET_KEY=${_STRIPE_SECRET_KEY},STRIPE_PRICE_ID_BASIC=${_STRIPE_PRICE_ID_BASIC},STRIPE_PRICE_ID_PRO=${_STRIPE_PRICE_ID_PRO},ADMIN_API_KEY=${_ADMIN_API_KEY},ADMIN_PASSWORD=${_ADMIN_PASSWORD},SMTP_SERVER=${_SMTP_SERVER},SMTP_PORT=${_SMTP_PORT},SMTP_USERNAME=${_SMTP_USERNAME},SMTP_PASSWORD=${_SMTP_PASSWORD},FROM_EMAIL=${_FROM_EMAIL},SUPPORT_EMAIL=${_SUPPORT_EMAIL},FREE_SCAN_LIMIT=${_FREE_SCAN_LIMIT}'
+      - 'DATABASE_URL=${_DATABASE_URL},JWT_SECRET_KEY=${_JWT_SECRET_KEY},GITHUB_CLIENT_ID=${_GITHUB_CLIENT_ID},GITHUB_CLIENT_SECRET=${_GITHUB_CLIENT_SECRET},GOOGLE_CLIENT_ID=${_GOOGLE_CLIENT_ID},GOOGLE_CLIENT_SECRET=${_GOOGLE_CLIENT_SECRET},FRONTEND_URL=${_FRONTEND_URL},CORS_ORIGINS=${_FRONTEND_URL},OPENAI_API_KEY=${_OPENAI_API_KEY},STRIPE_SECRET_KEY=${_STRIPE_SECRET_KEY},STRIPE_PRICE_ID_BASIC=${_STRIPE_PRICE_ID_BASIC},STRIPE_PRICE_ID_PRO=${_STRIPE_PRICE_ID_PRO},ADMIN_API_KEY=${_ADMIN_API_KEY},ADMIN_PASSWORD=${_ADMIN_PASSWORD},SMTP_SERVER=${_SMTP_SERVER},SMTP_PORT=${_SMTP_PORT},SMTP_USERNAME=${_SMTP_USERNAME},SMTP_PASSWORD=${_SMTP_PASSWORD},FROM_EMAIL=${_FROM_EMAIL},SUPPORT_EMAIL=${_SUPPORT_EMAIL},FREE_SCAN_LIMIT=${_FREE_SCAN_LIMIT}'
     id: 'deploy-backend'
     waitFor: ['push-backend']
 
   # Deploy frontend to Cloud Run
+  # Note: VITE_API_URL is a build-time variable, so it's set during the build step
+  # The frontend will use the fallback domain (stratum.daifend.ai) if VITE_API_URL is not set
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
@@ -105,7 +107,7 @@ substitutions:
   _REPO_NAME: vulnerability-scanner
   _BACKEND_SERVICE_NAME: vulnerability-scanner-backend
   _FRONTEND_SERVICE_NAME: vulnerability-scanner-frontend
-  _FRONTEND_URL: https://vulnerability-scanner-frontend-xxxxx.run.app
+  _FRONTEND_URL: https://stratum.daifend.ai
   _DATABASE_URL: ''
   _JWT_SECRET_KEY: ''
   _GITHUB_CLIENT_ID: ''
