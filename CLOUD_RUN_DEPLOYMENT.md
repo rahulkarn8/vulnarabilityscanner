@@ -204,16 +204,23 @@ gcloud run services update vulnerability-scanner-backend \
 ### Option C: Using Cloud Build (CI/CD)
 
 ```bash
-# Submit build to Cloud Build
-gcloud builds submit --config=cloudbuild.yaml
+# Submit build to Cloud Build (explicitly specify the config file)
+gcloud builds submit --config=cloudbuild.yaml .
 
 # Or trigger from source repository
 gcloud builds triggers create github \
-    --repo-name=your-repo \
-    --repo-owner=your-username \
+    --repo-name=vulnarabilityscanner \
+    --repo-owner=rahulkarn8 \
     --branch-pattern="^main$" \
+    --build-config=cloudbuild.yaml \
+    --name=vulnerability-scanner-build
+
+# If you have an existing trigger, update it:
+gcloud builds triggers update vulnerability-scanner-build \
     --build-config=cloudbuild.yaml
 ```
+
+**Important**: Make sure your Cloud Build trigger is configured to use `cloudbuild.yaml`. If you're seeing errors about missing Dockerfile, the trigger might be using Cloud Run's automatic build instead of your custom config.
 
 ## Step 4: Update OAuth Redirect URIs
 
