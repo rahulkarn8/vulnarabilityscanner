@@ -14,6 +14,10 @@ DOMAIN="${CUSTOM_DOMAIN:-stratum.daifend.ai}"
 echo "🌐 Setting up custom domain: $DOMAIN"
 echo ""
 
+# Ensure beta component is installed (required for fully managed Cloud Run)
+echo "📦 Checking for gcloud beta component..."
+gcloud components install beta --quiet 2>/dev/null || echo "Beta component already installed or installation skipped"
+
 # Create domain mapping (use beta for fully managed Cloud Run)
 echo "📋 Creating domain mapping for frontend service..."
 gcloud beta run domain-mappings create \
