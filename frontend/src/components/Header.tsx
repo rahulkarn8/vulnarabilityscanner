@@ -23,7 +23,7 @@ interface HeaderProps {
   onScanLimitReached?: (scansUsed: number, scanLimit: number) => void
 }
 
-function Header({ onAnalyzeDirectory, onAnalyzeFiles, onAnalyzeGitRepo, setFileContents, setLoading, currentView = 'dashboard', onViewChange, analysisResults, scanType, scanTarget, onDirectorySelected, selectedFiles, onScanLimitReached }: HeaderProps) {
+function Header({ onAnalyzeDirectory, onAnalyzeFiles: _onAnalyzeFiles, onAnalyzeGitRepo, setFileContents, setLoading, currentView = 'dashboard', onViewChange, analysisResults, scanType, scanTarget, onDirectorySelected, selectedFiles, onScanLimitReached }: HeaderProps) {
   const { user, logout, token } = useAuth()
   const [repoUrl, setRepoUrl] = useState('')
   const [repoBranch, setRepoBranch] = useState('')
