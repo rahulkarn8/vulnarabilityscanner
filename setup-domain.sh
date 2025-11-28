@@ -14,9 +14,9 @@ DOMAIN="${CUSTOM_DOMAIN:-stratum.daifend.ai}"
 echo "🌐 Setting up custom domain: $DOMAIN"
 echo ""
 
-# Create domain mapping
+# Create domain mapping (use beta for fully managed Cloud Run)
 echo "📋 Creating domain mapping for frontend service..."
-gcloud run domain-mappings create \
+gcloud beta run domain-mappings create \
     --service "$FRONTEND_SERVICE" \
     --domain "$DOMAIN" \
     --region "$REGION" \
@@ -31,7 +31,7 @@ echo ""
 echo "⏳ Wait for DNS propagation (usually 5-30 minutes, can take up to 48 hours)"
 echo ""
 echo "🔍 To check status, run:"
-echo "   gcloud run domain-mappings describe $DOMAIN --region=$REGION --project=$PROJECT_ID"
+echo "   gcloud beta run domain-mappings describe $DOMAIN --region=$REGION --project=$PROJECT_ID"
 echo ""
 echo "🔧 Once the domain is active, update backend CORS:"
 echo "   gcloud run services update $BACKEND_SERVICE \\"

@@ -17,8 +17,8 @@ export REGION="europe-west1"
 export FRONTEND_SERVICE="vulnerability-scanner-frontend"
 export DOMAIN="stratum.daifend.ai"
 
-# Map the domain to your frontend Cloud Run service
-gcloud run domain-mappings create \
+# Map the domain to your frontend Cloud Run service (use beta for fully managed Cloud Run)
+gcloud beta run domain-mappings create \
     --service "$FRONTEND_SERVICE" \
     --domain "$DOMAIN" \
     --region "$REGION" \
@@ -79,7 +79,7 @@ nslookup stratum.daifend.ai
 
 ```bash
 # Check the status of your domain mapping
-gcloud run domain-mappings describe "$DOMAIN" \
+gcloud beta run domain-mappings describe "$DOMAIN" \
     --region="$REGION" \
     --project="$PROJECT_ID"
 ```
@@ -169,7 +169,7 @@ Make sure you've updated `CORS_ORIGINS` in your backend service to include `http
 ### Check Domain Mapping Status
 
 ```bash
-gcloud run domain-mappings list \
+gcloud beta run domain-mappings list \
     --region="$REGION" \
     --project="$PROJECT_ID"
 ```
@@ -180,7 +180,7 @@ If you want to expose the backend API directly (optional):
 
 ```bash
 # Map backend to api.stratum.daifend.ai (or api.daifend.ai)
-gcloud run domain-mappings create \
+gcloud beta run domain-mappings create \
     --service "$BACKEND_SERVICE" \
     --domain "api.stratum.daifend.ai" \
     --region "$REGION" \
@@ -207,7 +207,7 @@ echo "🌐 Setting up custom domain: $DOMAIN"
 
 # Step 1: Create domain mapping
 echo "📋 Creating domain mapping..."
-gcloud run domain-mappings create \
+gcloud beta run domain-mappings create \
     --service "$FRONTEND_SERVICE" \
     --domain "$DOMAIN" \
     --region "$REGION" \
