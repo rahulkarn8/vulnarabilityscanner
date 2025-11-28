@@ -125,12 +125,17 @@ echo -e "   URL: ${FRONTEND_URL}"
 
 # Update backend with frontend URL
 echo -e "\n${GREEN}🔄 Updating backend with frontend URL...${NC}"
+# Update FRONTEND_URL separately to avoid parsing issues with special characters
+gcloud run services update "$BACKEND_SERVICE" \
+    --update-env-vars "FRONTEND_URL=${FRONTEND_URL}" \
+    --region "$REGION" \
+    --project="$PROJECT_ID"
+
 # Build CORS_ORIGINS value (comma-separated list)
 CORS_ORIGINS_VALUE="${FRONTEND_URL},https://stratum.daifend.ai"
-# Update environment variables - use format: KEY1=value1,KEY2=value2
-# The values are automatically quoted by gcloud, so we don't need extra quotes
+# Update CORS_ORIGINS separately (the comma in the value causes issues if combined)
 gcloud run services update "$BACKEND_SERVICE" \
-    --update-env-vars FRONTEND_URL="${FRONTEND_URL}",CORS_ORIGINS="${CORS_ORIGINS_VALUE}" \
+    --update-env-vars "CORS_ORIGINS=${CORS_ORIGINS_VALUE}" \
     --region "$REGION" \
     --project="$PROJECT_ID"
 
