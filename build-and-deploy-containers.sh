@@ -125,19 +125,27 @@ echo -e "   URL: ${FRONTEND_URL}"
 
 # Update backend with frontend URL
 echo -e "\n${GREEN}🔄 Updating backend with frontend URL...${NC}"
-# Update FRONTEND_URL separately to avoid parsing issues with special characters
+# Build CORS_ORIGINS value (comma-separated list)
+CORS_ORIGINS_VALUE="${FRONTEND_URL},https://stratum.daifend.ai"
+
+# Create a temporary YAML file for environment variables to avoid parsing issues
+ENV_VARS_FILE=$(mktemp)
+cat > "$ENV_VARS_FILE" <<EOF
+updateEnvVars:
+- name: FRONTEND_URL
+  value: '${FRONTEND_URL}'
+- name: CORS_ORIGINS
+  value: '${CORS_ORIGINS_VALUE}'
+EOF
+
+# Update using the flags file
 gcloud run services update "$BACKEND_SERVICE" \
-    --update-env-vars "FRONTEND_URL=${FRONTEND_URL}" \
+    --flags-file="$ENV_VARS_FILE" \
     --region "$REGION" \
     --project="$PROJECT_ID"
 
-# Build CORS_ORIGINS value (comma-separated list)
-CORS_ORIGINS_VALUE="${FRONTEND_URL},https://stratum.daifend.ai"
-# Update CORS_ORIGINS separately (the comma in the value causes issues if combined)
-gcloud run services update "$BACKEND_SERVICE" \
-    --update-env-vars "CORS_ORIGINS=${CORS_ORIGINS_VALUE}" \
-    --region "$REGION" \
-    --project="$PROJECT_ID"
+# Clean up
+rm -f "$ENV_VARS_FILE"
 
 echo -e "\n${GREEN}🎉 Deployment complete!${NC}\n"
 echo -e "${GREEN}📋 Service URLs:${NC}"
