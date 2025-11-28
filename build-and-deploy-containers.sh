@@ -61,6 +61,14 @@ fi
 echo -e "\n${GREEN}🐳 Configuring Docker authentication...${NC}"
 gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
 
+# Configure Docker to bypass proxy for Artifact Registry (if proxy is causing issues)
+# This prevents timeout errors when pushing to Artifact Registry
+if docker info 2>/dev/null | grep -q "HTTP Proxy"; then
+    echo -e "${YELLOW}⚠️  Docker proxy detected. Configuring NO_PROXY for Artifact Registry...${NC}"
+    export NO_PROXY="${NO_PROXY},${REGION}-docker.pkg.dev,*.pkg.dev"
+    export no_proxy="${no_proxy},${REGION}-docker.pkg.dev,*.pkg.dev"
+fi
+
 # Load environment variables from .env file if it exists
 if [ -f .env ]; then
     echo -e "\n${GREEN}📝 Loading environment variables from .env file...${NC}"
@@ -74,14 +82,34 @@ echo -e "\n${GREEN}🔨 Building backend Docker image...${NC}"
 docker build -t "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/backend:latest" ./backend
 
 echo -e "\n${GREEN}📤 Pushing backend image to Artifact Registry...${NC}"
-docker push "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/backend:latest"
+# Temporarily disable proxy for Artifact Registry push to avoid timeout
+HTTP_PROXY_BACKUP=$HTTP_PROXY
+HTTPS_PROXY_BACKUP=$HTTPS_PROXY
+unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy
+docker push "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/backend:latest" || {
+    # Restore proxy settings if push fails
+    export HTTP_PROXY=$HTTP_PROXY_BACKUP
+    export HTTPS_PROXY=$HTTPS_PROXY_BACKUP
+    exit 1
+}
+export HTTP_PROXY=$HTTP_PROXY_BACKUP
+export HTTPS_PROXY=$HTTPS_PROXY_BACKUP
 
 # Build frontend image
 echo -e "\n${GREEN}🔨 Building frontend Docker image...${NC}"
 docker build -t "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/frontend:latest" ./frontend
 
 echo -e "\n${GREEN}📤 Pushing frontend image to Artifact Registry...${NC}"
-docker push "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/frontend:latest"
+# Temporarily disable proxy for Artifact Registry push to avoid timeout
+unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy
+docker push "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/frontend:latest" || {
+    # Restore proxy settings if push fails
+    export HTTP_PROXY=$HTTP_PROXY_BACKUP
+    export HTTPS_PROXY=$HTTPS_PROXY_BACKUP
+    exit 1
+}
+export HTTP_PROXY=$HTTP_PROXY_BACKUP
+export HTTPS_PROXY=$HTTPS_PROXY_BACKUP
 
 # Deploy backend to Cloud Run
 echo -e "\n${GREEN}🚀 Deploying backend to Cloud Run...${NC}"
