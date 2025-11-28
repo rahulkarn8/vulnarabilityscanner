@@ -124,7 +124,7 @@ gcloud run deploy "$BACKEND_SERVICE" \
     --min-instances 0 \
     --max-instances 10 \
     --timeout 300 \
-    --set-env-vars "DATABASE_URL=${DATABASE_URL:-},JWT_SECRET_KEY=${JWT_SECRET_KEY:-},GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID:-},GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET:-},GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-},GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-},FRONTEND_URL=${FRONTEND_URL:-https://stratum.daifend.ai},CORS_ORIGINS=${FRONTEND_URL:-https://stratum.daifend.ai},OPENAI_API_KEY=${OPENAI_API_KEY:-},STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-},STRIPE_PRICE_ID_BASIC=${STRIPE_PRICE_ID_BASIC:-},STRIPE_PRICE_ID_PRO=${STRIPE_PRICE_ID_PRO:-},ADMIN_API_KEY=${ADMIN_API_KEY:-},ADMIN_PASSWORD=${ADMIN_PASSWORD:-},SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com},SMTP_PORT=${SMTP_PORT:-587},SMTP_USERNAME=${SMTP_USERNAME:-},SMTP_PASSWORD=${SMTP_PASSWORD:-},FROM_EMAIL=${FROM_EMAIL:-},SUPPORT_EMAIL=${SUPPORT_EMAIL:-support@daifend.com},FREE_SCAN_LIMIT=${FREE_SCAN_LIMIT:-5}" \
+    --set-env-vars "DATABASE_URL=${DATABASE_URL:-},JWT_SECRET_KEY=${JWT_SECRET_KEY:-},GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID:-},GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET:-},GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-},GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-},OPENAI_API_KEY=${OPENAI_API_KEY:-},STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-},STRIPE_PRICE_ID_BASIC=${STRIPE_PRICE_ID_BASIC:-},STRIPE_PRICE_ID_PRO=${STRIPE_PRICE_ID_PRO:-},ADMIN_API_KEY=${ADMIN_API_KEY:-},ADMIN_PASSWORD=${ADMIN_PASSWORD:-},SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com},SMTP_PORT=${SMTP_PORT:-587},SMTP_USERNAME=${SMTP_USERNAME:-},SMTP_PASSWORD=${SMTP_PASSWORD:-},FROM_EMAIL=${FROM_EMAIL:-},SUPPORT_EMAIL=${SUPPORT_EMAIL:-support@daifend.com},FREE_SCAN_LIMIT=${FREE_SCAN_LIMIT:-5}" \
     --project="$PROJECT_ID"
 
 # Get backend URL
@@ -151,29 +151,29 @@ FRONTEND_URL=$(gcloud run services describe "$FRONTEND_SERVICE" --region="$REGIO
 echo -e "\n${GREEN}✅ Frontend deployed successfully!${NC}"
 echo -e "   URL: ${FRONTEND_URL}"
 
-# Update backend with frontend URL
+# Update backend with frontend URL (use Cloud Run URLs since custom domain not set up yet)
 echo -e "\n${GREEN}🔄 Updating backend with frontend URL...${NC}"
-# Build CORS_ORIGINS value (comma-separated list)
-CORS_ORIGINS_VALUE="${FRONTEND_URL},https://stratum.daifend.ai"
+# Build CORS_ORIGINS value (comma-separated list) - use Cloud Run URLs
+CORS_ORIGINS_VALUE="${FRONTEND_URL}"
 
-# Create a temporary YAML file for environment variables to avoid parsing issues
-ENV_VARS_FILE=$(mktemp)
-cat > "$ENV_VARS_FILE" <<EOF
-updateEnvVars:
-- name: FRONTEND_URL
-  value: '${FRONTEND_URL}'
-- name: CORS_ORIGINS
-  value: '${CORS_ORIGINS_VALUE}'
-EOF
-
-# Update using the flags file
+# Update environment variables using --set-env-vars to replace existing values
+# Get current env vars and merge with new ones
+echo "Setting FRONTEND_URL=${FRONTEND_URL} and CORS_ORIGINS=${CORS_ORIGINS_VALUE}"
 gcloud run services update "$BACKEND_SERVICE" \
-    --flags-file="$ENV_VARS_FILE" \
+    --set-env-vars "FRONTEND_URL=${FRONTEND_URL},CORS_ORIGINS=${CORS_ORIGINS_VALUE}" \
     --region "$REGION" \
-    --project="$PROJECT_ID"
-
-# Clean up
-rm -f "$ENV_VARS_FILE"
+    --project="$PROJECT_ID" || {
+    echo -e "${YELLOW}⚠️  Failed to update env vars with --set-env-vars, trying separate updates...${NC}"
+    # Fallback: update separately using individual commands
+    gcloud run services update "$BACKEND_SERVICE" \
+        --update-env-vars "FRONTEND_URL=${FRONTEND_URL}" \
+        --region "$REGION" \
+        --project="$PROJECT_ID"
+    gcloud run services update "$BACKEND_SERVICE" \
+        --update-env-vars "CORS_ORIGINS=${CORS_ORIGINS_VALUE}" \
+        --region "$REGION" \
+        --project="$PROJECT_ID"
+}
 
 echo -e "\n${GREEN}🎉 Deployment complete!${NC}\n"
 echo -e "${GREEN}📋 Service URLs:${NC}"
