@@ -1,5 +1,6 @@
 steps:
   # Build backend image
+    # Build backend image
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
@@ -8,11 +9,13 @@ steps:
       - '-t'
       - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/backend:latest'
       - '-f'
-      - 'Dockerfile'
-      - 'backend'              # <-- build context is backend directory
+      - 'backend/Dockerfile'   # <--- path is from repo root
+      - 'backend'              # <--- build context is backend directory
     id: 'build-backend'
 
+
   # Build frontend image
+   # Build frontend image
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
@@ -21,8 +24,8 @@ steps:
       - '-t'
       - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:latest'
       - '-f'
-      - 'Dockerfile'
-      - 'frontend'             # <-- build context is frontend directory
+      - 'frontend/Dockerfile'  # <--- path is from repo root
+      - 'frontend'             # <--- build context is frontend directory
     id: 'build-frontend'
 
   # Push backend image
