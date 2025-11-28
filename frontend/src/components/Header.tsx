@@ -476,97 +476,6 @@ function Header({ onAnalyzeDirectory, onAnalyzeFiles, onAnalyzeGitRepo, setFileC
     }
   }
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files
-    if (!files || files.length === 0) return
-
-    // Convert to array immediately
-    const filesArray = Array.from(files)
-    console.log('Files uploaded, count:', filesArray.length)
-    console.log('File names:', filesArray.map(f => f.name))
-    
-    // Read file contents immediately for display
-    const contents: Record<string, string> = {}
-    const fileList: string[] = []
-    
-    for (const file of filesArray) {
-      fileList.push(file.name)
-      try {
-        const text = await file.text()
-        contents[file.name] = text
-      } catch (e) {
-        console.error(`Error reading file ${file.name}:`, e)
-      }
-    }
-    
-    console.log('File list for display:', fileList)
-    console.log('File contents loaded:', Object.keys(contents))
-    
-    // Set file contents immediately so files can be viewed
-    setFileContents(contents)
-    
-    // Notify parent about files for display - this should show files in FileTree
-    if (onDirectorySelected) {
-      onDirectorySelected(filesArray)
-      console.log('Notified parent about files')
-    }
-
-    // Now scan the files
-    setLocalLoading(true)
-    setLoading(true)
-    const formData = new FormData()
-    filesArray.forEach(file => {
-      formData.append('files', file)
-    })
-
-    try {
-      const headers: any = {
-        'Content-Type': 'multipart/form-data'
-      }
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`
-      }
-      const response = await axios.post(`${API_URL}/upload-files`, formData, {
-        headers
-      })
-
-      console.log('Upload response:', response.data)
-      
-      // Update file contents (they're already set above)
-      // Just update analysis results
-      onAnalyzeFiles(response.data)
-    } catch (error: any) {
-      console.error('Error uploading files:', error)
-      
-      // Handle scan limit reached (403 error)
-      if (error.response?.status === 403) {
-        const scanData = error.response.data?.detail || error.response.data
-        if (scanData?.error === 'scan_limit_reached') {
-          const scansUsed = scanData.scans_used || scanData.scan_count || 0
-          const scanLimit = scanData.scan_limit || 5
-          setLocalLoading(false)
-          setLoading(false)
-          if (onScanLimitReached) {
-            onScanLimitReached(scansUsed, scanLimit)
-          }
-          return
-        }
-      }
-      
-      if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
-        alert(
-          '❌ Network Error: Backend server is not running!\n\n' +
-          'Please start the backend server first.'
-        )
-      } else {
-        alert(`Error: ${error.response?.data?.detail || error.message}`)
-      }
-    } finally {
-      setLocalLoading(false)
-      setLoading(false)
-    }
-  }
-
   const handleGitRepoAnalyze = async () => {
     // Use selectedRepo if GitHub user, otherwise use repoUrl
     const repoToAnalyze = user?.provider === 'github' && selectedRepo 
@@ -1045,7 +954,7 @@ function Header({ onAnalyzeDirectory, onAnalyzeFiles, onAnalyzeGitRepo, setFileC
                   <option value="">{loadingBranches ? 'Loading branches...' : 'Select Branch'}</option>
                   {branches.length > 0 ? (
                     branches.map((branch, index) => {
-                      const branchName = branch?.name || branch
+                      const branchName = typeof branch === 'string' ? branch : (branch?.name || `branch-${index}`)
                       console.log(`Rendering branch ${index}:`, branchName, branch)
                       return (
                         <option key={branchName || index} value={branchName}>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Github, Mail, Lock, User } from 'lucide-react'
+import { Github, Mail, Lock } from 'lucide-react'
 import axios from 'axios'
 import { API_URL } from '../config'
 import { useAuth } from '../contexts/AuthContext'

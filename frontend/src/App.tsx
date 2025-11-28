@@ -33,7 +33,7 @@ export interface FileAnalysis {
 }
 
 function App() {
-  const { loading: authLoading, token, user, isAuthenticated } = useAuth()
+  const { loading: authLoading, token, isAuthenticated } = useAuth()
   const [selectedFile, setSelectedFile] = useState<string | null>(null)
   const [fileContents, setFileContents] = useState<Record<string, string>>({})
   const [analysisResults, setAnalysisResults] = useState<Record<string, FileAnalysis>>({})
