@@ -125,8 +125,16 @@ echo -e "   URL: ${FRONTEND_URL}"
 
 # Update backend with frontend URL
 echo -e "\n${GREEN}🔄 Updating backend with frontend URL...${NC}"
+# Update FRONTEND_URL first
 gcloud run services update "$BACKEND_SERVICE" \
-    --update-env-vars "FRONTEND_URL=${FRONTEND_URL},CORS_ORIGINS=${FRONTEND_URL},https://stratum.daifend.ai" \
+    --update-env-vars "FRONTEND_URL=${FRONTEND_URL}" \
+    --region "$REGION" \
+    --project="$PROJECT_ID"
+# Then update CORS_ORIGINS (comma-separated list needs to be set as a single value)
+# Use semicolon or pipe as separator in the env var string, or update separately
+CORS_ORIGINS_VALUE="${FRONTEND_URL},https://stratum.daifend.ai"
+gcloud run services update "$BACKEND_SERVICE" \
+    --update-env-vars "CORS_ORIGINS=${CORS_ORIGINS_VALUE}" \
     --region "$REGION" \
     --project="$PROJECT_ID"
 
