@@ -127,23 +127,12 @@ echo -e "   URL: ${FRONTEND_URL}"
 echo -e "\n${GREEN}🔄 Updating backend with frontend URL...${NC}"
 # Build CORS_ORIGINS value (comma-separated list)
 CORS_ORIGINS_VALUE="${FRONTEND_URL},https://stratum.daifend.ai"
-# Update both environment variables using proper key=value format
-# Use single quotes to prevent shell interpretation, then let gcloud parse it
+# Update environment variables - use format: KEY1=value1,KEY2=value2
+# The values are automatically quoted by gcloud, so we don't need extra quotes
 gcloud run services update "$BACKEND_SERVICE" \
-    --update-env-vars "FRONTEND_URL=${FRONTEND_URL},CORS_ORIGINS=${CORS_ORIGINS_VALUE}" \
+    --update-env-vars FRONTEND_URL="${FRONTEND_URL}",CORS_ORIGINS="${CORS_ORIGINS_VALUE}" \
     --region "$REGION" \
-    --project="$PROJECT_ID" 2>&1 || {
-    # If that fails, try updating them separately
-    echo "Updating environment variables separately..."
-    gcloud run services update "$BACKEND_SERVICE" \
-        --update-env-vars FRONTEND_URL="${FRONTEND_URL}" \
-        --region "$REGION" \
-        --project="$PROJECT_ID"
-    gcloud run services update "$BACKEND_SERVICE" \
-        --update-env-vars CORS_ORIGINS="${CORS_ORIGINS_VALUE}" \
-        --region "$REGION" \
-        --project="$PROJECT_ID"
-}
+    --project="$PROJECT_ID"
 
 echo -e "\n${GREEN}🎉 Deployment complete!${NC}\n"
 echo -e "${GREEN}📋 Service URLs:${NC}"
