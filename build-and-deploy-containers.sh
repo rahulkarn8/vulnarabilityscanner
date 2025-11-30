@@ -95,8 +95,29 @@ docker push "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/backend:latest"
 export HTTP_PROXY=$HTTP_PROXY_BACKUP
 export HTTPS_PROXY=$HTTPS_PROXY_BACKUP
 
-# Build frontend image with backend URL
-echo -e "\n${GREEN}🔨 Building frontend Docker image...${NC}"
+# Deploy backend to Cloud Run FIRST (we need its URL for frontend build)
+echo -e "\n${GREEN}🚀 Deploying backend to Cloud Run...${NC}"
+gcloud run deploy "$BACKEND_SERVICE" \
+    --image "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/backend:latest" \
+    --region "$REGION" \
+    --platform managed \
+    --allow-unauthenticated \
+    --port 8000 \
+    --memory 2Gi \
+    --cpu 2 \
+    --min-instances 0 \
+    --max-instances 10 \
+    --timeout 300 \
+    --set-env-vars "DATABASE_URL=${DATABASE_URL:-},JWT_SECRET_KEY=${JWT_SECRET_KEY:-},GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID:-},GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET:-},GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-},GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-},OPENAI_API_KEY=${OPENAI_API_KEY:-},STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-},STRIPE_PRICE_ID_BASIC=${STRIPE_PRICE_ID_BASIC:-},STRIPE_PRICE_ID_PRO=${STRIPE_PRICE_ID_PRO:-},ADMIN_API_KEY=${ADMIN_API_KEY:-},ADMIN_PASSWORD=${ADMIN_PASSWORD:-},SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com},SMTP_PORT=${SMTP_PORT:-587},SMTP_USERNAME=${SMTP_USERNAME:-},SMTP_PASSWORD=${SMTP_PASSWORD:-},FROM_EMAIL=${FROM_EMAIL:-},SUPPORT_EMAIL=${SUPPORT_EMAIL:-support@daifend.com},FREE_SCAN_LIMIT=${FREE_SCAN_LIMIT:-5}" \
+    --project="$PROJECT_ID"
+
+# Get backend URL (needed for frontend build)
+BACKEND_URL=$(gcloud run services describe "$BACKEND_SERVICE" --region="$REGION" --format="value(status.url)" --project="$PROJECT_ID")
+echo -e "\n${GREEN}✅ Backend deployed successfully!${NC}"
+echo -e "   URL: ${BACKEND_URL}"
+
+# Build frontend image WITH backend URL (build happens after backend is deployed)
+echo -e "\n${GREEN}🔨 Building frontend Docker image with backend URL: ${BACKEND_URL}...${NC}"
 # Build frontend with backend URL as build argument
 docker build \
     --build-arg VITE_API_URL="${BACKEND_URL}" \
@@ -114,27 +135,6 @@ docker push "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/frontend:latest
 }
 export HTTP_PROXY=$HTTP_PROXY_BACKUP
 export HTTPS_PROXY=$HTTPS_PROXY_BACKUP
-
-# Deploy backend to Cloud Run
-echo -e "\n${GREEN}🚀 Deploying backend to Cloud Run...${NC}"
-gcloud run deploy "$BACKEND_SERVICE" \
-    --image "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/backend:latest" \
-    --region "$REGION" \
-    --platform managed \
-    --allow-unauthenticated \
-    --port 8000 \
-    --memory 2Gi \
-    --cpu 2 \
-    --min-instances 0 \
-    --max-instances 10 \
-    --timeout 300 \
-    --set-env-vars "DATABASE_URL=${DATABASE_URL:-},JWT_SECRET_KEY=${JWT_SECRET_KEY:-},GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID:-},GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET:-},GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-},GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-},OPENAI_API_KEY=${OPENAI_API_KEY:-},STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-},STRIPE_PRICE_ID_BASIC=${STRIPE_PRICE_ID_BASIC:-},STRIPE_PRICE_ID_PRO=${STRIPE_PRICE_ID_PRO:-},ADMIN_API_KEY=${ADMIN_API_KEY:-},ADMIN_PASSWORD=${ADMIN_PASSWORD:-},SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com},SMTP_PORT=${SMTP_PORT:-587},SMTP_USERNAME=${SMTP_USERNAME:-},SMTP_PASSWORD=${SMTP_PASSWORD:-},FROM_EMAIL=${FROM_EMAIL:-},SUPPORT_EMAIL=${SUPPORT_EMAIL:-support@daifend.com},FREE_SCAN_LIMIT=${FREE_SCAN_LIMIT:-5}" \
-    --project="$PROJECT_ID"
-
-# Get backend URL
-BACKEND_URL=$(gcloud run services describe "$BACKEND_SERVICE" --region="$REGION" --format="value(status.url)" --project="$PROJECT_ID")
-echo -e "\n${GREEN}✅ Backend deployed successfully!${NC}"
-echo -e "   URL: ${BACKEND_URL}"
 
 # Deploy frontend to Cloud Run
 echo -e "\n${GREEN}🚀 Deploying frontend to Cloud Run...${NC}"
