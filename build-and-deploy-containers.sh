@@ -105,7 +105,7 @@ gcloud run deploy "$BACKEND_SERVICE" \
     --port 8000 \
     --memory 2Gi \
     --cpu 2 \
-    --min-instances 0 \
+    --min-instances 1 \
     --max-instances 10 \
     --timeout 600 \
     --cpu-boost \

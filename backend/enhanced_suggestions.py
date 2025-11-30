@@ -73,13 +73,16 @@ class EnhancedSuggestions:
         vulnerability: Dict[str, Any],
     ) -> Optional[str]:
         """
-        Get suggestion from OpenAI API.
+        Get suggestion from OpenAI API with timeout to prevent slow responses.
 
         Returns:
             The full text suggestion or None if something goes wrong.
         """
         if not self.openai_client:
             return None
+        
+        # Add timeout to prevent API from hanging
+        import asyncio
 
         vuln_type = vulnerability.get("type", "Unknown")
         severity = vulnerability.get("severity", "medium")
@@ -123,20 +126,29 @@ BEST_PRACTICES: [key points]
 """
 
         try:
-            response = self.openai_client.chat.completions.create(
-                model="gpt-4-turbo-preview",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are an expert cybersecurity and code security specialist. Provide clear, secure, and efficient code replacements."
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                max_tokens=1000,
-                temperature=0.3
+            # Add timeout to prevent API from hanging (5 seconds max)
+            import asyncio
+            loop = asyncio.get_event_loop()
+            response = await asyncio.wait_for(
+                loop.run_in_executor(
+                    None,
+                    lambda: self.openai_client.chat.completions.create(
+                        model="gpt-4-turbo-preview",
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": "You are an expert cybersecurity and code security specialist. Provide clear, secure, and efficient code replacements."
+                            },
+                            {
+                                "role": "user",
+                                "content": prompt
+                            }
+                        ],
+                        max_tokens=1000,
+                        temperature=0.3
+                    )
+                ),
+                timeout=5.0  # 5 second timeout
             )
             
             suggestion_text = response.choices[0].message.content

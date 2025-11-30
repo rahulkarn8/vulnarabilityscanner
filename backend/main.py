@@ -226,24 +226,46 @@ async def analyze_code(
         
         print(f"[DEBUG] Total vulnerabilities found: {len(vulnerabilities)}")
         
-        # Get suggestions from enhanced model
+        # Get suggestions from enhanced model (with timeout to prevent slow responses)
+        # Process suggestions in parallel for better performance
+        import asyncio
         results = []
-        for vuln in vulnerabilities:
-            suggested_fix = await enhanced_suggestions.get_suggestion(
-                request.code,
-                request.language,
-                vuln
-            )
-            results.append(VulnerabilityResponse(
-                line_number=vuln["line_number"],
-                severity=vuln["severity"],
-                vulnerability_type=vuln["type"],
-                description=vuln["description"],
-                code_snippet=vuln["code_snippet"],
-                suggested_fix=suggested_fix,
-                scanner=vuln.get("scanner"),
-                confidence=vuln.get("confidence")
-            ))
+        
+        async def get_suggestion_with_timeout(vuln):
+            """Get suggestion with 3 second timeout to prevent API from hanging"""
+            try:
+                return await asyncio.wait_for(
+                    enhanced_suggestions.get_suggestion(
+                        request.code,
+                        request.language,
+                        vuln
+                    ),
+                    timeout=3.0  # 3 second timeout per suggestion
+                )
+            except asyncio.TimeoutError:
+                print(f"[WARNING] Suggestion timeout for vulnerability at line {vuln.get('line_number')}")
+                return "Suggestion generation timed out. Please review the vulnerability manually."
+            except Exception as e:
+                print(f"[WARNING] Suggestion error: {e}")
+                return "Unable to generate suggestion. Please review the vulnerability manually."
+        
+        # Process all suggestions in parallel (faster than sequential)
+        if vulnerabilities:
+            suggestion_tasks = [get_suggestion_with_timeout(vuln) for vuln in vulnerabilities]
+            suggestions = await asyncio.gather(*suggestion_tasks, return_exceptions=True)
+            
+            for i, vuln in enumerate(vulnerabilities):
+                suggested_fix = suggestions[i] if not isinstance(suggestions[i], Exception) else "Unable to generate suggestion."
+                results.append(VulnerabilityResponse(
+                    line_number=vuln["line_number"],
+                    severity=vuln["severity"],
+                    vulnerability_type=vuln["type"],
+                    description=vuln["description"],
+                    code_snippet=vuln["code_snippet"],
+                    suggested_fix=suggested_fix,
+                    scanner=vuln.get("scanner"),
+                    confidence=vuln.get("confidence")
+                ))
         
         print(f"[DEBUG] Returning {len(results)} vulnerability results")
         
