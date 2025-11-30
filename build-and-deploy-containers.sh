@@ -157,8 +157,8 @@ echo -e "   URL: ${FRONTEND_URL}"
 
 # Update backend with frontend URL (use Cloud Run URLs since custom domain not set up yet)
 echo -e "\n${GREEN}🔄 Updating backend with frontend URL...${NC}"
-# Build CORS_ORIGINS value (comma-separated list) - use Cloud Run URLs
-CORS_ORIGINS_VALUE="${FRONTEND_URL}"
+# Build CORS_ORIGINS value (comma-separated list) - include both Cloud Run URL and custom domain
+CORS_ORIGINS_VALUE="${FRONTEND_URL},https://stratum.daifend.ai"
 
 # Update environment variables using --set-env-vars to replace existing values
 # Get current env vars and merge with new ones
