@@ -537,11 +537,27 @@ GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
 # Check if running in development (can be set via environment variable)
 IS_DEVELOPMENT = os.getenv("ENVIRONMENT", "").lower() == "development" or os.getenv("DEBUG", "").lower() == "true"
 
-GITHUB_REDIRECT_URI = os.getenv("GITHUB_REDIRECT_URI", "http://localhost:8000/auth/github/callback" if IS_DEVELOPMENT else "https://stratum.daifend.ai/auth/github/callback")
+# OAuth redirect URIs - use environment variable if set, otherwise use backend URL
+# In production, the backend URL should be set via environment variable
+BACKEND_URL = os.getenv("BACKEND_URL") or os.getenv("FRONTEND_URL", "").replace("/frontend", "/backend") if os.getenv("FRONTEND_URL") else ""
+if not BACKEND_URL and not IS_DEVELOPMENT:
+    # Try to construct from common Cloud Run patterns
+    # This is a fallback - should be set via env var
+    BACKEND_URL = "https://vulnerability-scanner-backend-oi4goiciua-ew.a.run.app"
+
+GITHUB_REDIRECT_URI = os.getenv("GITHUB_REDIRECT_URI") or (
+    "http://localhost:8000/auth/github/callback" if IS_DEVELOPMENT 
+    else f"{BACKEND_URL}/auth/github/callback" if BACKEND_URL 
+    else "https://stratum.daifend.ai/auth/github/callback"
+)
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/google/callback" if IS_DEVELOPMENT else "https://stratum.daifend.ai/auth/google/callback")
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI") or (
+    "http://localhost:8000/auth/google/callback" if IS_DEVELOPMENT 
+    else f"{BACKEND_URL}/auth/google/callback" if BACKEND_URL 
+    else "https://stratum.daifend.ai/auth/google/callback"
+)
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173" if IS_DEVELOPMENT else "https://stratum.daifend.ai")
 

@@ -112,10 +112,22 @@ gcloud run deploy "$BACKEND_SERVICE" \
     --set-env-vars "DATABASE_URL=${DATABASE_URL:-},JWT_SECRET_KEY=${JWT_SECRET_KEY:-},GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID:-},GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET:-},GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-},GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-},OPENAI_API_KEY=${OPENAI_API_KEY:-},STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-},STRIPE_PRICE_ID_BASIC=${STRIPE_PRICE_ID_BASIC:-},STRIPE_PRICE_ID_PRO=${STRIPE_PRICE_ID_PRO:-},ADMIN_API_KEY=${ADMIN_API_KEY:-},ADMIN_PASSWORD=${ADMIN_PASSWORD:-},SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com},SMTP_PORT=${SMTP_PORT:-587},SMTP_USERNAME=${SMTP_USERNAME:-},SMTP_PASSWORD=${SMTP_PASSWORD:-},FROM_EMAIL=${FROM_EMAIL:-},SUPPORT_EMAIL=${SUPPORT_EMAIL:-support@daifend.com},FREE_SCAN_LIMIT=${FREE_SCAN_LIMIT:-5}" \
     --project="$PROJECT_ID"
 
-# Get backend URL (needed for frontend build)
+# Get backend URL (needed for frontend build and OAuth redirect URIs)
 BACKEND_URL=$(gcloud run services describe "$BACKEND_SERVICE" --region="$REGION" --format="value(status.url)" --project="$PROJECT_ID")
 echo -e "\n${GREEN}✅ Backend deployed successfully!${NC}"
 echo -e "   URL: ${BACKEND_URL}"
+
+# Update backend with OAuth redirect URIs (must use backend Cloud Run URL, not custom domain)
+echo -e "\n${GREEN}🔄 Updating backend with OAuth redirect URIs...${NC}"
+GITHUB_REDIRECT_URI="${BACKEND_URL}/auth/github/callback"
+GOOGLE_REDIRECT_URI="${BACKEND_URL}/auth/google/callback"
+echo "   GITHUB_REDIRECT_URI: ${GITHUB_REDIRECT_URI}"
+echo "   GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}"
+
+gcloud run services update "$BACKEND_SERVICE" \
+    --update-env-vars "GITHUB_REDIRECT_URI=${GITHUB_REDIRECT_URI},GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}" \
+    --region "$REGION" \
+    --project="$PROJECT_ID"
 
 # Build frontend image WITH backend URL (build happens after backend is deployed)
 echo -e "\n${GREEN}🔨 Building frontend Docker image with backend URL: ${BACKEND_URL}...${NC}"
