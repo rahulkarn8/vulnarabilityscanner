@@ -1052,6 +1052,8 @@ async def get_learned_vulnerabilities(
     }
 
 # PDF Report Generation
+# Note: Report generation does NOT count against scan limits
+# Free tier users can generate reports even after using their 5 free scans
 class PDFReportRequest(BaseModel):
     results: Dict[str, Any]  # FileAnalysis results
     scan_type: str = "Code Scan"
@@ -1062,7 +1064,11 @@ async def generate_pdf_report(
     request: PDFReportRequest,
     current_user: Optional[User] = Depends(get_current_user_optional)
 ):
-    """Generate PDF report from scan results"""
+    """Generate PDF report from scan results
+    
+    Available to all users (free tier and subscribers).
+    Does not count against the 5-scan limit for free tier users.
+    """
     try:
         pdf_generator = PDFReportGenerator()
         pdf_bytes = pdf_generator.generate_report(
@@ -1087,6 +1093,8 @@ async def generate_pdf_report(
 
 
 # Compliance Report Generation
+# Note: Report generation does NOT count against scan limits
+# Free tier users can generate reports even after using their 5 free scans
 class ComplianceReportRequest(BaseModel):
     results: Dict[str, Any]  # FileAnalysis results
     scan_type: str = "Automotive Compliance Scan"
@@ -1099,7 +1107,11 @@ async def generate_compliance_report(
     db: Session = Depends(get_db),
     current_user: Optional[User] = Depends(get_current_user_optional)
 ):
-    """Generate compliance report for ISO 21434 and UN R155"""
+    """Generate compliance report for ISO 21434 and UN R155
+    
+    Available to all users (free tier and subscribers).
+    Does not count against the 5-scan limit for free tier users.
+    """
     try:
         # Collect all vulnerabilities from results
         all_vulnerabilities = []
@@ -1145,7 +1157,11 @@ async def generate_compliance_pdf(
     request: ComplianceReportRequest,
     current_user: Optional[User] = Depends(get_current_user_optional)
 ):
-    """Generate PDF compliance report for ISO 21434 and UN R155"""
+    """Generate PDF compliance report for ISO 21434 and UN R155
+    
+    Available to all users (free tier and subscribers).
+    Does not count against the 5-scan limit for free tier users.
+    """
     try:
         import traceback
         

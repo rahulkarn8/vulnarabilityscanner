@@ -765,6 +765,10 @@ async def get_current_user_optional(
     return user
 
 # Rate Limiting for Scans
+# Free tier: 5 scans per machine (IP address) for non-authenticated users
+# Free tier: 5 scans per user account for authenticated users without subscription
+# Subscribed users: Unlimited scans
+# Note: Report generation does NOT count against scan limits
 # Read from environment variable, default to 5
 FREE_SCAN_LIMIT = int(os.getenv("FREE_SCAN_LIMIT", "5"))
 
@@ -773,7 +777,12 @@ async def check_scan_limit(
     user: Optional[User] = Depends(get_current_user_optional),
     db: Session = Depends(get_db)
 ):
-    """Check if user/IP has exceeded scan limit. Raises HTTPException if limit exceeded."""
+    """Check if user/IP has exceeded scan limit. Raises HTTPException if limit exceeded.
+    
+    Free tier users (non-subscribed) are limited to 5 scans per machine (IP address).
+    Subscribed users have unlimited scans.
+    Report generation endpoints do NOT use this check.
+    """
     # Users with active subscription have unlimited scans
     if user and user.subscription_plan:
         return True
