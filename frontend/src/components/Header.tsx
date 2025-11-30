@@ -50,6 +50,11 @@ function Header({ onAnalyzeDirectory, onAnalyzeFiles: _onAnalyzeFiles, onAnalyze
   const [timeoutDialogOnConfirm, setTimeoutDialogOnConfirm] = useState<(() => void) | null>(null)
 
   const handleDirectorySelectViaAPI = async () => {
+    // Navigate to dashboard if not already there
+    if (currentView !== 'dashboard' && onViewChange) {
+      onViewChange('dashboard')
+    }
+    
     // Try to use File System Access API which has a cleaner dialog
     // @ts-ignore - File System Access API types may not be available
     if ('showDirectoryPicker' in window) {
@@ -135,6 +140,11 @@ function Header({ onAnalyzeDirectory, onAnalyzeFiles: _onAnalyzeFiles, onAnalyze
   }
 
   const handleDirectorySelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // Navigate to dashboard if not already there
+    if (currentView !== 'dashboard' && onViewChange) {
+      onViewChange('dashboard')
+    }
+    
     const files = event.target.files
     if (!files || files.length === 0) {
       setSelectedDirectory('')
@@ -252,6 +262,11 @@ function Header({ onAnalyzeDirectory, onAnalyzeFiles: _onAnalyzeFiles, onAnalyze
   }
 
   const handleScanDirectory = async () => {
+    // Navigate to dashboard if not already there
+    if (currentView !== 'dashboard' && onViewChange) {
+      onViewChange('dashboard')
+    }
+    
     // Use array directly - files should already be arrays
     const filesToScan = selectedFiles || localSelectedFiles
     
