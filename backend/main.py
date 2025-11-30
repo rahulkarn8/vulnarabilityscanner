@@ -845,14 +845,14 @@ PRICING_PLANS = {
         "name": "Basic Plan",
         "price": 1000,
         "stripe_price_id": os.getenv("STRIPE_PRICE_ID_BASIC", ""),
-        "includes_reports": False,
+        "includes_reports": True,  # Reports available for all tiers
         "includes_api": False
     },
     "enterprise-pro": {
         "name": "Professional Plan",
         "price": 1500,
         "stripe_price_id": os.getenv("STRIPE_PRICE_ID_PRO", ""),
-        "includes_reports": True,
+        "includes_reports": True,  # Reports available for all tiers
         "includes_api": True
     }
 }
@@ -874,7 +874,7 @@ async def create_checkout_session(request: CheckoutRequest):
     try:
         # Create description based on plan features
         if request.plan_id == "enterprise-basic":
-            description = "Unlimited code scanning and vulnerability detection"
+            description = "Unlimited code scanning, vulnerability reports, and compliance reports"
         else:
             description = "Unlimited code scanning, vulnerability reports, compliance reports, and API access"
         

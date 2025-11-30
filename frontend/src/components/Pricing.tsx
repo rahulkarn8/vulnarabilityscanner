@@ -23,6 +23,8 @@ const plans: PricingPlan[] = [
       'Unlimited file analysis',
       'All language support',
       'Advanced vulnerability detection',
+      'Vulnerability reports',
+      'Compliance reports',
       'Priority support'
     ]
   },
@@ -219,7 +221,7 @@ function Pricing() {
           <div className="faq-grid">
             <div className="faq-item">
               <h4>What's included in the Basic Plan?</h4>
-              <p>The Basic Plan includes unlimited code scanning and vulnerability detection, but does not include reports or API access.</p>
+              <p>The Basic Plan includes unlimited code scanning, vulnerability detection, vulnerability reports, and compliance reports. API access is available in the Professional Plan.</p>
             </div>
             <div className="faq-item">
               <h4>Can I change plans later?</h4>
