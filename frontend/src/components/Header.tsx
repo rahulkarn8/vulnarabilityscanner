@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
-import { FolderOpen, FileCode, GitBranch, LogOut, Code2, DollarSign, Menu, ChevronDown, Download, User, HelpCircle } from 'lucide-react'
+import { FolderOpen, FileCode, GitBranch, LogOut, Code2, DollarSign, Menu, ChevronDown, Download, User, HelpCircle, LogIn, UserPlus } from 'lucide-react'
 import { FileAnalysis } from '../App'
 import { useAuth } from '../contexts/AuthContext'
 import { API_URL } from '../config'
@@ -21,9 +21,10 @@ interface HeaderProps {
   onDirectorySelected?: (files: File[]) => void
   selectedFiles?: File[] | null
   onScanLimitReached?: (scansUsed: number, scanLimit: number) => void
+  onShowLogin?: () => void
 }
 
-function Header({ onAnalyzeDirectory, onAnalyzeFiles: _onAnalyzeFiles, onAnalyzeGitRepo, setFileContents, setLoading, currentView = 'dashboard', onViewChange, analysisResults, scanType, scanTarget, onDirectorySelected, selectedFiles, onScanLimitReached }: HeaderProps) {
+function Header({ onAnalyzeDirectory, onAnalyzeFiles: _onAnalyzeFiles, onAnalyzeGitRepo, setFileContents, setLoading, currentView = 'dashboard', onViewChange, analysisResults, scanType, scanTarget, onDirectorySelected, selectedFiles, onScanLimitReached, onShowLogin }: HeaderProps) {
   const { user, logout, token } = useAuth()
   const [repoUrl, setRepoUrl] = useState('')
   const [repoBranch, setRepoBranch] = useState('')
@@ -1197,14 +1198,93 @@ function Header({ onAnalyzeDirectory, onAnalyzeFiles: _onAnalyzeFiles, onAnalyze
                     </button>
                   </>
                 ) : (
-                  <div style={{
-                    padding: '12px 16px',
-                    fontSize: '0.875rem',
-                    color: '#6b7280',
-                    textAlign: 'center'
-                  }}>
-                    Not logged in
-                  </div>
+                  <>
+                    <div style={{
+                      padding: '12px 16px',
+                      borderBottom: '1px solid #e5e7eb',
+                      background: '#f9fafb'
+                    }}>
+                      <div style={{
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: '#1f2937'
+                      }}>
+                        Guest User
+                      </div>
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: '#6b7280',
+                        marginTop: '4px'
+                      }}>
+                        Sign in to access all features
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (onShowLogin) {
+                          onShowLogin()
+                        }
+                        setAvatarMenuOpen(false)
+                      }}
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        padding: '12px 16px',
+                        background: 'white',
+                        border: 'none',
+                        textAlign: 'left',
+                        color: '#1f2937',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#f9fafb'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'white'
+                      }}
+                    >
+                      <LogIn size={18} />
+                      <span>Sign In</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (onShowLogin) {
+                          onShowLogin()
+                        }
+                        setAvatarMenuOpen(false)
+                      }}
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        padding: '12px 16px',
+                        background: 'white',
+                        border: 'none',
+                        borderTop: '1px solid #e5e7eb',
+                        textAlign: 'left',
+                        color: '#1f2937',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#f9fafb'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'white'
+                      }}
+                    >
+                      <UserPlus size={18} />
+                      <span>Register</span>
+                    </button>
+                  </>
                 )}
               </div>
             </>

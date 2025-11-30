@@ -158,7 +158,8 @@ function App() {
 
   return (
     <div className="app">
-      <Header 
+      <Header
+        onShowLogin={() => setShowLoginPopup(true)} 
         onScanLimitReached={(scansUsed, scanLimit) => {
           setScanLimitInfo({ scansUsed, scanLimit })
           setShowLoginPopup(true)
