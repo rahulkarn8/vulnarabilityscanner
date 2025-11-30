@@ -24,8 +24,8 @@ EXPOSE ${PORT:-8000}
 
 # Run the application with production settings
 # Cloud Run sets PORT environment variable automatically
-# Create a startup script to properly handle PORT
-RUN echo '#!/bin/sh\nPORT=${PORT:-8000}\nexec uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1' > /app/start.sh && chmod +x /app/start.sh
+# Use a simple startup script that handles PORT correctly
+RUN echo '#!/bin/bash\nset -e\nPORT=${PORT:-8000}\necho "Starting server on port $PORT"\nexec uvicorn main:app --host 0.0.0.0 --port "$PORT" --workers 1 --timeout-keep-alive 30' > /app/start.sh && chmod +x /app/start.sh
 
 CMD ["/app/start.sh"]
 
