@@ -454,8 +454,8 @@ async def analyze_directory(
 
 @app.post("/upload-files")
 async def upload_files(
-    files: List[UploadFile] = File(...),
     request_obj: Request,
+    files: List[UploadFile] = File(...),
     db: Session = Depends(get_db),
     current_user: Optional[User] = Depends(get_current_user_optional),
     _: bool = Depends(check_scan_limit)
