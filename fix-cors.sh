@@ -22,11 +22,27 @@ fi
 
 echo "   Setting CORS_ORIGINS to: $CORS_ORIGINS_VALUE"
 
-# Update the environment variable
+# Create a temporary YAML file for environment variables to handle special characters
+TEMP_ENV_FILE=$(mktemp)
+cat > "$TEMP_ENV_FILE" << EOF
+CORS_ORIGINS: ${CORS_ORIGINS_VALUE}
+EOF
+
+# Update the environment variable using --set-env-vars with the YAML file
 gcloud run services update "$BACKEND_SERVICE" \
-    --update-env-vars "CORS_ORIGINS=${CORS_ORIGINS_VALUE}" \
+    --set-env-vars "$(cat "$TEMP_ENV_FILE")" \
     --region "$REGION" \
-    --project="$PROJECT_ID"
+    --project="$PROJECT_ID" || {
+    echo "⚠️  Failed with YAML file, trying with escaped value..."
+    # Fallback: use --set-env-vars with proper key=value format
+    gcloud run services update "$BACKEND_SERVICE" \
+        --set-env-vars "CORS_ORIGINS=${CORS_ORIGINS_VALUE}" \
+        --region "$REGION" \
+        --project="$PROJECT_ID"
+}
+
+# Clean up temp file
+rm -f "$TEMP_ENV_FILE"
 
 echo ""
 echo "✅ CORS_ORIGINS updated successfully!"
