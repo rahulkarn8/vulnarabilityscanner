@@ -109,7 +109,7 @@ gcloud run deploy "$BACKEND_SERVICE" \
     --max-instances 10 \
     --timeout 600 \
     --cpu-boost \
-    --set-env-vars "DATABASE_URL=${DATABASE_URL:-},JWT_SECRET_KEY=${JWT_SECRET_KEY:-},GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID:-},GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET:-},GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-},GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-},OPENAI_API_KEY=${OPENAI_API_KEY:-},STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-},STRIPE_PRICE_ID_BASIC=${STRIPE_PRICE_ID_BASIC:-},STRIPE_PRICE_ID_PRO=${STRIPE_PRICE_ID_PRO:-},ADMIN_API_KEY=${ADMIN_API_KEY:-},ADMIN_PASSWORD=${ADMIN_PASSWORD:-},SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com},SMTP_PORT=${SMTP_PORT:-587},SMTP_USERNAME=${SMTP_USERNAME:-},SMTP_PASSWORD=${SMTP_PASSWORD:-},FROM_EMAIL=${FROM_EMAIL:-},SUPPORT_EMAIL=${SUPPORT_EMAIL:-support@daifend.com},FREE_SCAN_LIMIT=${FREE_SCAN_LIMIT:-5}" \
+    --set-env-vars "DATABASE_URL=${DATABASE_URL:-},JWT_SECRET_KEY=${JWT_SECRET_KEY:-},GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID:-},GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET:-},GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-},GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-},OPENAI_API_KEY=${OPENAI_API_KEY:-},STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-},STRIPE_PRICE_ID_BASIC=${STRIPE_PRICE_ID_BASIC:-},STRIPE_PRICE_ID_PRO=${STRIPE_PRICE_ID_PRO:-},ADMIN_API_KEY=${ADMIN_API_KEY:-},ADMIN_PASSWORD=${ADMIN_PASSWORD:-},SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com},SMTP_PORT=${SMTP_PORT:-587},SMTP_USERNAME=${SMTP_USERNAME:-},SMTP_PASSWORD=${SMTP_PASSWORD:-ypht ltua gvdz lilj},FROM_EMAIL=${FROM_EMAIL:-},SUPPORT_EMAIL=${SUPPORT_EMAIL:-support@daifend.com},FREE_SCAN_LIMIT=${FREE_SCAN_LIMIT:-5},CORS_ORIGINS=${CORS_ORIGINS:-https://vulnerability-scanner-frontend-oi4goiciua-ew.a.run.app,https://stratum.daifend.ai}" \
     --project="$PROJECT_ID"
 
 # Get backend URL (needed for frontend build and OAuth redirect URIs)
@@ -124,8 +124,11 @@ GOOGLE_REDIRECT_URI="${BACKEND_URL}/auth/google/callback"
 echo "   GITHUB_REDIRECT_URI: ${GITHUB_REDIRECT_URI}"
 echo "   GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}"
 
+# Update OAuth redirect URIs and SMTP password
+echo -e "\n${GREEN}🔄 Updating backend with OAuth redirect URIs and SMTP password...${NC}"
+SMTP_PASSWORD_VALUE="${SMTP_PASSWORD:-ypht ltua gvdz lilj}"
 gcloud run services update "$BACKEND_SERVICE" \
-    --update-env-vars "GITHUB_REDIRECT_URI=${GITHUB_REDIRECT_URI},GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}" \
+    --update-env-vars "GITHUB_REDIRECT_URI=${GITHUB_REDIRECT_URI},GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI},SMTP_PASSWORD=${SMTP_PASSWORD_VALUE}" \
     --region "$REGION" \
     --project="$PROJECT_ID"
 
@@ -171,7 +174,8 @@ echo -e "   URL: ${FRONTEND_URL}"
 # Update backend with frontend URL (use Cloud Run URLs since custom domain not set up yet)
 echo -e "\n${GREEN}🔄 Updating backend with frontend URL and CORS_ORIGINS...${NC}"
 # Build CORS_ORIGINS value (comma-separated list) - include both Cloud Run URL and custom domain
-CORS_ORIGINS_VALUE="${FRONTEND_URL},https://stratum.daifend.ai"
+# Use the specified value or default to the provided URLs
+CORS_ORIGINS_VALUE="${CORS_ORIGINS:-https://vulnerability-scanner-frontend-oi4goiciua-ew.a.run.app,https://stratum.daifend.ai}"
 
 echo "Setting FRONTEND_URL=${FRONTEND_URL}"
 echo "Setting CORS_ORIGINS=${CORS_ORIGINS_VALUE}"
