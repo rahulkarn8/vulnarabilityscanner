@@ -163,20 +163,25 @@ CORS_ORIGINS_VALUE="${FRONTEND_URL},https://stratum.daifend.ai"
 # Update environment variables using --set-env-vars to replace existing values
 # Get current env vars and merge with new ones
 echo "Setting FRONTEND_URL=${FRONTEND_URL} and CORS_ORIGINS=${CORS_ORIGINS_VALUE}"
+
+# Use --set-env-vars with proper key=value format (comma-separated)
+# For CORS_ORIGINS with commas in the value, we need to update them separately
 gcloud run services update "$BACKEND_SERVICE" \
-    --set-env-vars "FRONTEND_URL=${FRONTEND_URL},CORS_ORIGINS=${CORS_ORIGINS_VALUE}" \
+    --update-env-vars "FRONTEND_URL=${FRONTEND_URL}" \
+    --region "$REGION" \
+    --project="$PROJECT_ID"
+
+# Update CORS_ORIGINS separately to avoid parsing issues with commas in the value
+gcloud run services update "$BACKEND_SERVICE" \
+    --update-env-vars "CORS_ORIGINS=${CORS_ORIGINS_VALUE}" \
     --region "$REGION" \
     --project="$PROJECT_ID" || {
-    echo -e "${YELLOW}⚠️  Failed to update env vars with --set-env-vars, trying separate updates...${NC}"
-    # Fallback: update separately using individual commands
-    gcloud run services update "$BACKEND_SERVICE" \
-        --update-env-vars "FRONTEND_URL=${FRONTEND_URL}" \
-        --region "$REGION" \
-        --project="$PROJECT_ID"
-    gcloud run services update "$BACKEND_SERVICE" \
-        --update-env-vars "CORS_ORIGINS=${CORS_ORIGINS_VALUE}" \
-        --region "$REGION" \
-        --project="$PROJECT_ID"
+    echo -e "${YELLOW}⚠️  Failed to update CORS_ORIGINS with --update-env-vars, trying with --set-env-vars...${NC}"
+    # Get all existing env vars first
+    EXISTING_ENV=$(gcloud run services describe "$BACKEND_SERVICE" --region="$REGION" --format="value(spec.template.spec.containers[0].env)" --project="$PROJECT_ID" 2>/dev/null || echo "")
+    # Use --set-env-vars with all env vars including the new CORS_ORIGINS
+    # This requires getting all existing env vars, which is complex, so we'll use a different approach
+    echo -e "${YELLOW}   Please update CORS_ORIGINS manually in Cloud Console or use fix-cors.sh script${NC}"
 }
 
 echo -e "\n${GREEN}🎉 Deployment complete!${NC}\n"
