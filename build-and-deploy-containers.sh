@@ -109,7 +109,7 @@ gcloud run deploy "$BACKEND_SERVICE" \
     --max-instances 10 \
     --timeout 600 \
     --cpu-boost \
-    --set-env-vars "DATABASE_URL=${DATABASE_URL:-},JWT_SECRET_KEY=${JWT_SECRET_KEY:-},GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID:-},GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET:-},GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-},GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-},OPENAI_API_KEY=${OPENAI_API_KEY:-},STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-},STRIPE_PRICE_ID_BASIC=${STRIPE_PRICE_ID_BASIC:-},STRIPE_PRICE_ID_PRO=${STRIPE_PRICE_ID_PRO:-},ADMIN_API_KEY=${ADMIN_API_KEY:-},ADMIN_PASSWORD=${ADMIN_PASSWORD:-},SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com},SMTP_PORT=${SMTP_PORT:-587},SMTP_USERNAME=${SMTP_USERNAME:-},SMTP_PASSWORD=${SMTP_PASSWORD:-ypht ltua gvdz lilj},FROM_EMAIL=${FROM_EMAIL:-},SUPPORT_EMAIL=${SUPPORT_EMAIL:-support@daifend.com},FREE_SCAN_LIMIT=${FREE_SCAN_LIMIT:-5},CORS_ORIGINS=${CORS_ORIGINS:-https://vulnerability-scanner-frontend-oi4goiciua-ew.a.run.app,https://stratum.daifend.ai}" \
+    --set-env-vars "DATABASE_URL=${DATABASE_URL:-},JWT_SECRET_KEY=${JWT_SECRET_KEY:-},GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID:-},GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET:-},GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-},GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-},OPENAI_API_KEY=${OPENAI_API_KEY:-},STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-},STRIPE_PRICE_ID_BASIC=${STRIPE_PRICE_ID_BASIC:-},STRIPE_PRICE_ID_PRO=${STRIPE_PRICE_ID_PRO:-},ADMIN_API_KEY=${ADMIN_API_KEY:-},ADMIN_PASSWORD=${ADMIN_PASSWORD:-},SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com},SMTP_PORT=${SMTP_PORT:-587},SMTP_USERNAME=${SMTP_USERNAME:-},SMTP_PASSWORD=${SMTP_PASSWORD:-ypht ltua gvdz lilj},FROM_EMAIL=${FROM_EMAIL:-},SUPPORT_EMAIL=${SUPPORT_EMAIL:-support@daifend.com},FREE_SCAN_LIMIT=${FREE_SCAN_LIMIT:-5}" \
     --project="$PROJECT_ID"
 
 # Get backend URL (needed for frontend build and OAuth redirect URIs)
@@ -131,6 +131,40 @@ gcloud run services update "$BACKEND_SERVICE" \
     --update-env-vars "GITHUB_REDIRECT_URI=${GITHUB_REDIRECT_URI},GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI},SMTP_PASSWORD=${SMTP_PASSWORD_VALUE}" \
     --region "$REGION" \
     --project="$PROJECT_ID"
+
+# Update CORS_ORIGINS separately (must be done separately due to comma in value)
+echo -e "\n${GREEN}🔄 Updating CORS_ORIGINS...${NC}"
+CORS_ORIGINS_VALUE="${CORS_ORIGINS:-https://vulnerability-scanner-frontend-oi4goiciua-ew.a.run.app,https://stratum.daifend.ai}"
+echo "Setting CORS_ORIGINS=${CORS_ORIGINS_VALUE}"
+
+# Use a temporary YAML file to handle the comma-separated value
+TEMP_ENV_FILE=$(mktemp)
+cat > "$TEMP_ENV_FILE" << EOF
+CORS_ORIGINS: "${CORS_ORIGINS_VALUE}"
+EOF
+
+gcloud run services update "$BACKEND_SERVICE" \
+    --update-env-vars-file="$TEMP_ENV_FILE" \
+    --region "$REGION" \
+    --project="$PROJECT_ID" 2>&1 || {
+    echo -e "${YELLOW}⚠️  Failed to update CORS_ORIGINS using YAML file. Trying alternative method...${NC}"
+    # Alternative: Use gcloud with proper escaping
+    gcloud run services update "$BACKEND_SERVICE" \
+        --update-env-vars "CORS_ORIGINS=https://vulnerability-scanner-frontend-oi4goiciua-ew.a.run.app\,https://stratum.daifend.ai" \
+        --region "$REGION" \
+        --project="$PROJECT_ID" 2>&1 || {
+        echo -e "${YELLOW}⚠️  Failed to update CORS_ORIGINS automatically.${NC}"
+        echo -e "${YELLOW}   Please update it manually in Cloud Console:${NC}"
+        echo -e "${YELLOW}   1. Go to: https://console.cloud.google.com/run/detail/${REGION}/${BACKEND_SERVICE}${NC}"
+        echo -e "${YELLOW}   2. Click 'Edit & Deploy New Revision'${NC}"
+        echo -e "${YELLOW}   3. Go to 'Variables & Secrets' tab${NC}"
+        echo -e "${YELLOW}   4. Set CORS_ORIGINS to: ${CORS_ORIGINS_VALUE}${NC}"
+        echo -e "${YELLOW}   5. Click 'Deploy'${NC}"
+    }
+}
+
+# Clean up temp file
+rm -f "$TEMP_ENV_FILE"
 
 # Build frontend image WITH backend URL (build happens after backend is deployed)
 echo -e "\n${GREEN}🔨 Building frontend Docker image with backend URL: ${BACKEND_URL}...${NC}"
