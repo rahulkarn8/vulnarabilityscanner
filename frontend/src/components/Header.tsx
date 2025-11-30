@@ -425,11 +425,25 @@ function Header({ onAnalyzeDirectory, onAnalyzeFiles: _onAnalyzeFiles, onAnalyze
       
       // Update file contents with matched paths
       if (Object.keys(fileContentsMap).length > 0) {
-        setFileContents((prev: Record<string, string>) => {
-          const merged = { ...prev, ...fileContentsMap }
-          console.log('File contents set after scan:', Object.keys(merged).length, 'files')
-          return merged
+        // Merge with existing contents
+        const currentContents = {} as Record<string, string>
+        // Get existing contents if available (from directory selection)
+        filesArray.forEach(file => {
+          const fileKey = file.webkitRelativePath || file.name
+          // Try to find matching result path
+          const matchingPath = Object.keys(filteredResults).find(path => 
+            path === fileKey || path.endsWith(fileKey) || fileKey.endsWith(path) ||
+            path.split('/').pop() === fileKey.split('/').pop()
+          )
+          if (matchingPath && fileContentsMap[matchingPath]) {
+            currentContents[matchingPath] = fileContentsMap[matchingPath]
+          }
         })
+        
+        // Merge fileContentsMap with any existing contents
+        const merged = { ...currentContents, ...fileContentsMap }
+        setFileContents(merged)
+        console.log('File contents set after scan:', Object.keys(merged).length, 'files')
       }
       
       // Then update analysis results with filtered files - this will trigger FileTree to show the files
