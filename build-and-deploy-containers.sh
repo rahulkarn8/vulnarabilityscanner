@@ -205,40 +205,14 @@ FRONTEND_URL=$(gcloud run services describe "$FRONTEND_SERVICE" --region="$REGIO
 echo -e "\n${GREEN}✅ Frontend deployed successfully!${NC}"
 echo -e "   URL: ${FRONTEND_URL}"
 
-# Update backend with frontend URL (use Cloud Run URLs since custom domain not set up yet)
-echo -e "\n${GREEN}🔄 Updating backend with frontend URL and CORS_ORIGINS...${NC}"
-# Build CORS_ORIGINS value (comma-separated list) - include both Cloud Run URL and custom domain
-# Use the specified value or default to the provided URLs
-CORS_ORIGINS_VALUE="${CORS_ORIGINS:-https://vulnerability-scanner-frontend-oi4goiciua-ew.a.run.app,https://stratum.daifend.ai}"
-
+# Update backend with frontend URL (CORS_ORIGINS was already set above)
+echo -e "\n${GREEN}🔄 Updating backend with frontend URL...${NC}"
 echo "Setting FRONTEND_URL=${FRONTEND_URL}"
-echo "Setting CORS_ORIGINS=${CORS_ORIGINS_VALUE}"
 
-# Update FRONTEND_URL first
 gcloud run services update "$BACKEND_SERVICE" \
     --update-env-vars "FRONTEND_URL=${FRONTEND_URL}" \
     --region "$REGION" \
     --project="$PROJECT_ID"
-
-# Update CORS_ORIGINS separately - use quotes to handle comma in value
-# The issue is that gcloud parses commas as separators, so we need to escape or quote properly
-echo -e "${YELLOW}⚠️  Note: CORS_ORIGINS update may fail due to comma parsing.${NC}"
-echo -e "${YELLOW}   If it fails, update manually in Cloud Console:${NC}"
-echo -e "${YELLOW}   CORS_ORIGINS=${CORS_ORIGINS_VALUE}${NC}"
-
-# Try to update CORS_ORIGINS - this may fail due to comma parsing
-gcloud run services update "$BACKEND_SERVICE" \
-    --update-env-vars "CORS_ORIGINS=${CORS_ORIGINS_VALUE}" \
-    --region "$REGION" \
-    --project="$PROJECT_ID" 2>&1 || {
-    echo -e "${YELLOW}⚠️  Failed to update CORS_ORIGINS automatically.${NC}"
-    echo -e "${YELLOW}   Please update it manually in Cloud Console:${NC}"
-    echo -e "${YELLOW}   1. Go to: https://console.cloud.google.com/run/detail/${REGION}/${BACKEND_SERVICE}${NC}"
-    echo -e "${YELLOW}   2. Click 'Edit & Deploy New Revision'${NC}"
-    echo -e "${YELLOW}   3. Go to 'Variables & Secrets' tab${NC}"
-    echo -e "${YELLOW}   4. Set CORS_ORIGINS to: ${CORS_ORIGINS_VALUE}${NC}"
-    echo -e "${YELLOW}   5. Click 'Deploy'${NC}"
-}
 
 echo -e "\n${GREEN}🎉 Deployment complete!${NC}\n"
 echo -e "${GREEN}📋 Service URLs:${NC}"
