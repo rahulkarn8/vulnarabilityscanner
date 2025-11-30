@@ -178,6 +178,23 @@ function App() {
             const firstFile = resultKeys[0]
             setSelectedFile(firstFile)
             
+            // Ensure file content is available for the selected file
+            // If content is missing, try to match with existing contents
+            if (!fileContents[firstFile]) {
+              const matchingKey = Object.keys(fileContents).find(key => 
+                key === firstFile || 
+                key.endsWith(firstFile) || 
+                firstFile.endsWith(key) ||
+                key.split('/').pop() === firstFile.split('/').pop()
+              )
+              if (matchingKey) {
+                setFileContents((prev: Record<string, string>) => ({
+                  ...prev,
+                  [firstFile]: prev[matchingKey]
+                }))
+              }
+            }
+            
             // Set first vulnerability if available
             const firstFileData = results[firstFile]
             if (firstFileData && firstFileData.vulnerabilities && firstFileData.vulnerabilities.length > 0) {

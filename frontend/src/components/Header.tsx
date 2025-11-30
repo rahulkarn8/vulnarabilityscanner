@@ -393,6 +393,84 @@ function Header({ onAnalyzeDirectory, onAnalyzeFiles: _onAnalyzeFiles, onAnalyze
         }
       })
 
+      // Read file contents from the uploaded files and match with result paths
+      // This ensures code is visible after scanning
+      const fileContentsMap: Record<string, string> = {}
+      
+      // Read contents from files array and match with result paths
+      const readPromises = filesArray.map(async (file) => {
+        const fileKey = file.webkitRelativePath || file.name
+        try {
+          const text = await file.text()
+          // Try to match this file with result paths
+          const matchingResultPath = Object.keys(filteredResults).find(resultPath => 
+            resultPath === fileKey || 
+            resultPath.endsWith(fileKey) || 
+            fileKey.endsWith(resultPath) ||
+            resultPath.split('/').pop() === fileKey.split('/').pop()
+          )
+          if (matchingResultPath) {
+            fileContentsMap[matchingResultPath] = text
+          } else {
+            // Fallback: use fileKey as-is
+            fileContentsMap[fileKey] = text
+          }
+        } catch (error) {
+          console.error(`Error reading file ${fileKey}:`, error)
+        }
+      })
+      
+      // Wait for all files to be read, then set contents
+      await Promise.all(readPromises)
+      
+      // Update file contents with matched paths
+      if (Object.keys(fileContentsMap).length > 0) {
+        setFileContents((prev: Record<string, string>) => {
+          const merged = { ...prev, ...fileContentsMap }
+          console.log('File contents set after scan:', Object.keys(merged).length, 'files')
+          return merged
+        })
+      }
+      
+      // Read file contents from the uploaded files and match with result paths
+      // This ensures code is visible after scanning
+      const fileContentsMap: Record<string, string> = {}
+      
+      // Read contents from files array and match with result paths
+      const readPromises = filesArray.map(async (file) => {
+        const fileKey = file.webkitRelativePath || file.name
+        try {
+          const text = await file.text()
+          // Try to match this file with result paths
+          const matchingResultPath = Object.keys(filteredResults).find(resultPath => 
+            resultPath === fileKey || 
+            resultPath.endsWith(fileKey) || 
+            fileKey.endsWith(resultPath) ||
+            resultPath.split('/').pop() === fileKey.split('/').pop()
+          )
+          if (matchingResultPath) {
+            fileContentsMap[matchingResultPath] = text
+          } else {
+            // Fallback: use fileKey as-is
+            fileContentsMap[fileKey] = text
+          }
+        } catch (error) {
+          console.error(`Error reading file ${fileKey}:`, error)
+        }
+      })
+      
+      // Wait for all files to be read, then set contents
+      await Promise.all(readPromises)
+      
+      // Update file contents with matched paths
+      if (Object.keys(fileContentsMap).length > 0) {
+        setFileContents(prev => {
+          const merged = { ...prev, ...fileContentsMap }
+          console.log('File contents set after scan:', Object.keys(merged).length, 'files')
+          return merged
+        })
+      }
+      
       // Then update analysis results with filtered files - this will trigger FileTree to show the files
       onAnalyzeDirectory(filteredResults)
     } catch (error: any) {
