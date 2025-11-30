@@ -22,10 +22,11 @@ RUN mkdir -p /app/data
 # Expose port (Cloud Run uses PORT env var, default to 8000)
 EXPOSE ${PORT:-8000}
 
+# Copy startup script
+COPY start_server.py /app/start_server.py
+RUN chmod +x /app/start_server.py
+
 # Run the application with production settings
 # Cloud Run sets PORT environment variable automatically
-# Use a simple startup script that handles PORT correctly
-RUN echo '#!/bin/bash\nset -e\nPORT=${PORT:-8000}\necho "Starting server on port $PORT"\nexec uvicorn main:app --host 0.0.0.0 --port "$PORT" --workers 1 --timeout-keep-alive 30' > /app/start.sh && chmod +x /app/start.sh
-
-CMD ["/app/start.sh"]
+CMD ["python", "/app/start_server.py"]
 

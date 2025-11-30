@@ -261,8 +261,13 @@ def migrate_add_usage_logs():
         if "already exists" not in str(e).lower() and "duplicate" not in str(e).lower():
             print(f"Warning: Migration check failed: {e}")
 
-Base.metadata.create_all(bind=engine)
-migrate_add_usage_logs()
+# Create tables - wrap in try/except to avoid blocking startup if DB is slow
+try:
+    Base.metadata.create_all(bind=engine)
+    migrate_add_usage_logs()
+except Exception as e:
+    print(f"Warning: Could not create tables during startup: {e}")
+    print("Tables will be created on first request")
 
 # Migration: Add expires_at column if it doesn't exist
 def migrate_add_expires_at():
