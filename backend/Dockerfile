@@ -24,5 +24,6 @@ EXPOSE ${PORT:-8000}
 
 # Run the application with production settings
 # Cloud Run sets PORT environment variable automatically
-CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 4
+# Use Python to read PORT from environment
+CMD python -c "import os; import uvicorn; port = int(os.environ.get('PORT', 8000)); uvicorn.run('main:app', host='0.0.0.0', port=port, workers=1)"
 
