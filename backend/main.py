@@ -11,6 +11,7 @@ import sys
 import tempfile
 import shutil
 from dotenv import load_dotenv
+from security_middleware import RateLimitMiddleware, SecurityHeadersMiddleware
 
 # Add backend directory to Python path to allow imports when running from project root
 backend_dir = os.path.dirname(os.path.abspath(__file__))
@@ -36,6 +37,11 @@ from usage_analytics import get_usage_statistics, get_user_usage_stats
 from support_email import send_support_email
 
 app = FastAPI(title="Stratum API - AI Cybersecurity Scanner by Daifend")
+
+# Add security middleware (rate limiting and security headers)
+# Rate limit: 60 requests per minute per IP (adjustable)
+app.add_middleware(RateLimitMiddleware, requests_per_minute=60)
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Include authentication routes
 app.include_router(auth_router)

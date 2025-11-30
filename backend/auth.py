@@ -112,6 +112,18 @@ class RegistrationAttempt(Base):
     last_attempt = Column(DateTime, default=datetime.utcnow, index=True)
     blocked_until = Column(DateTime, nullable=True, index=True)
 
+class LoginAttempt(Base):
+    """Track login attempts per IP/email to prevent brute force attacks"""
+    __tablename__ = "login_attempts"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    ip_address = Column(String, nullable=False, index=True)
+    email = Column(String, nullable=True, index=True)
+    attempt_count = Column(Integer, default=1)
+    failed_attempts = Column(Integer, default=0)
+    last_attempt = Column(DateTime, default=datetime.utcnow, index=True)
+    blocked_until = Column(DateTime, nullable=True, index=True)
+
 class UsageLog(Base):
     __tablename__ = "usage_logs"
     
@@ -441,6 +453,73 @@ def migrate_add_registration_attempts():
             print(f"Warning: Registration attempts table migration check failed: {e}")
 
 migrate_add_registration_attempts()
+
+# Migration: Create login_attempts table for brute force protection
+def migrate_add_login_attempts():
+    """Create login_attempts table for brute force protection"""
+    from sqlalchemy import inspect, text
+    try:
+        inspector = inspect(engine)
+        if not inspector.has_table('login_attempts'):
+            with engine.begin() as conn:
+                db_url = str(engine.url)
+                is_sqlite = 'sqlite' in db_url.lower()
+                is_postgres = 'postgresql' in db_url.lower() or 'postgres' in db_url.lower()
+                
+                if is_postgres:
+                    conn.execute(text("""
+                        CREATE TABLE login_attempts (
+                            id SERIAL PRIMARY KEY,
+                            ip_address VARCHAR(255) NOT NULL,
+                            email VARCHAR(255),
+                            attempt_count INTEGER DEFAULT 1,
+                            failed_attempts INTEGER DEFAULT 0,
+                            last_attempt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            blocked_until TIMESTAMP
+                        )
+                    """))
+                    conn.execute(text("CREATE INDEX idx_login_attempts_ip ON login_attempts(ip_address)"))
+                    conn.execute(text("CREATE INDEX idx_login_attempts_email ON login_attempts(email)"))
+                    conn.execute(text("CREATE INDEX idx_login_attempts_blocked ON login_attempts(blocked_until)"))
+                    print("Migration: Created login_attempts table (PostgreSQL)")
+                elif 'mysql' in db_url.lower():
+                    conn.execute(text("""
+                        CREATE TABLE login_attempts (
+                            id INT AUTO_INCREMENT PRIMARY KEY,
+                            ip_address VARCHAR(255) NOT NULL,
+                            email VARCHAR(255),
+                            attempt_count INT DEFAULT 1,
+                            failed_attempts INT DEFAULT 0,
+                            last_attempt DATETIME DEFAULT CURRENT_TIMESTAMP,
+                            blocked_until DATETIME,
+                            INDEX idx_login_attempts_ip (ip_address),
+                            INDEX idx_login_attempts_email (email),
+                            INDEX idx_login_attempts_blocked (blocked_until)
+                        )
+                    """))
+                    print("Migration: Created login_attempts table (MySQL)")
+                elif is_sqlite:
+                    conn.execute(text("""
+                        CREATE TABLE login_attempts (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            ip_address TEXT NOT NULL,
+                            email TEXT,
+                            attempt_count INTEGER DEFAULT 1,
+                            failed_attempts INTEGER DEFAULT 0,
+                            last_attempt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            blocked_until TIMESTAMP
+                        )
+                    """))
+                    conn.execute(text("CREATE INDEX idx_login_attempts_ip ON login_attempts(ip_address)"))
+                    conn.execute(text("CREATE INDEX idx_login_attempts_email ON login_attempts(email)"))
+                    conn.execute(text("CREATE INDEX idx_login_attempts_blocked ON login_attempts(blocked_until)"))
+                    print("Migration: Created login_attempts table (SQLite)")
+    except Exception as e:
+        error_str = str(e).lower()
+        if "duplicate" not in error_str and "already exists" not in error_str:
+            print(f"Warning: Login attempts table migration failed: {e}")
+
+migrate_add_login_attempts()
 
 # JWT Configuration
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", secrets.token_urlsafe(32))
@@ -897,21 +976,86 @@ async def register(request: RegisterRequest, request_obj: FastAPIRequest, db: Se
     }
 
 @router.post("/login")
-async def login(request: LoginRequest, db: Session = Depends(get_db)):
-    """Login with email and password"""
+async def login(request: LoginRequest, request_obj: FastAPIRequest, db: Session = Depends(get_db)):
+    """Login with email and password - with brute force protection"""
+    # Get client IP for brute force protection
+    client_ip = request_obj.client.host if request_obj.client else "unknown"
+    current_time = datetime.utcnow()
+    
+    # Check for brute force attempts
+    from sqlalchemy import and_
+    login_attempt = db.query(LoginAttempt).filter(
+        and_(
+            LoginAttempt.ip_address == client_ip,
+            LoginAttempt.email == request.email
+        )
+    ).first()
+    
+    # Check if IP/email is blocked
+    if login_attempt and login_attempt.blocked_until and login_attempt.blocked_until > current_time:
+        remaining_minutes = int((login_attempt.blocked_until - current_time).total_seconds() / 60)
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "error": "account_locked",
+                "message": f"Too many failed login attempts. Account locked for {remaining_minutes} minutes.",
+                "retry_after": remaining_minutes * 60
+            }
+        )
+    
+    # Check attempt rate (max 5 attempts per 15 minutes per IP/email)
+    if login_attempt:
+        time_since_last = (current_time - login_attempt.last_attempt).total_seconds()
+        if time_since_last < 900:  # 15 minutes
+            if login_attempt.attempt_count >= 5:
+                # Block for 15 minutes
+                login_attempt.blocked_until = current_time + timedelta(minutes=15)
+                login_attempt.attempt_count += 1
+                login_attempt.last_attempt = current_time
+                db.commit()
+                raise HTTPException(
+                    status_code=429,
+                    detail={
+                        "error": "too_many_attempts",
+                        "message": "Too many login attempts. Please wait 15 minutes.",
+                        "retry_after": 900
+                    }
+                )
+        else:
+            # Reset if more than 15 minutes have passed
+            login_attempt.attempt_count = 1
+            login_attempt.failed_attempts = 0
+            login_attempt.blocked_until = None
+            login_attempt.last_attempt = current_time
+            db.commit()
+    
     # Find user by email and provider
     user = db.query(User).filter(
         User.email == request.email,
         User.provider == 'email'
     ).first()
     
-    if not user:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid email or password"
-        )
-    
-    if not user.password_hash:
+    if not user or not user.password_hash:
+        # Record failed attempt
+        if login_attempt:
+            login_attempt.attempt_count += 1
+            login_attempt.failed_attempts += 1
+            login_attempt.last_attempt = current_time
+            # Block after 5 failed attempts
+            if login_attempt.failed_attempts >= 5:
+                login_attempt.blocked_until = current_time + timedelta(minutes=15)
+            db.commit()
+        else:
+            login_attempt = LoginAttempt(
+                ip_address=client_ip,
+                email=request.email,
+                attempt_count=1,
+                failed_attempts=1,
+                last_attempt=current_time
+            )
+            db.add(login_attempt)
+            db.commit()
+        
         raise HTTPException(
             status_code=401,
             detail="Invalid email or password"
@@ -919,10 +1063,37 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
     
     # Verify password
     if not verify_password(request.password, user.password_hash):
+        # Record failed attempt
+        if login_attempt:
+            login_attempt.attempt_count += 1
+            login_attempt.failed_attempts += 1
+            login_attempt.last_attempt = current_time
+            # Block after 5 failed attempts
+            if login_attempt.failed_attempts >= 5:
+                login_attempt.blocked_until = current_time + timedelta(minutes=15)
+            db.commit()
+        else:
+            login_attempt = LoginAttempt(
+                ip_address=client_ip,
+                email=request.email,
+                attempt_count=1,
+                failed_attempts=1,
+                last_attempt=current_time
+            )
+            db.add(login_attempt)
+            db.commit()
+        
         raise HTTPException(
             status_code=401,
             detail="Invalid email or password"
         )
+    
+    # Successful login - reset failed attempts
+    if login_attempt:
+        login_attempt.failed_attempts = 0
+        login_attempt.attempt_count = 0
+        login_attempt.blocked_until = None
+        db.commit()
     
     # Create JWT token
     jwt_token = create_access_token({"sub": str(user.id)})
