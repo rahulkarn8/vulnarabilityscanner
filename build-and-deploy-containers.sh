@@ -95,9 +95,13 @@ docker push "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/backend:latest"
 export HTTP_PROXY=$HTTP_PROXY_BACKUP
 export HTTPS_PROXY=$HTTPS_PROXY_BACKUP
 
-# Build frontend image
+# Build frontend image with backend URL
 echo -e "\n${GREEN}🔨 Building frontend Docker image...${NC}"
-docker build -t "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/frontend:latest" ./frontend
+# Build frontend with backend URL as build argument
+docker build \
+    --build-arg VITE_API_URL="${BACKEND_URL}" \
+    -t "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/frontend:latest" \
+    ./frontend
 
 echo -e "\n${GREEN}📤 Pushing frontend image to Artifact Registry...${NC}"
 # Temporarily disable proxy for Artifact Registry push to avoid timeout
