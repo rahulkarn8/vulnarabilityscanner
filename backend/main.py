@@ -38,15 +38,10 @@ from support_email import send_support_email
 
 app = FastAPI(title="Stratum API - AI Cybersecurity Scanner by Daifend")
 
-# Add security middleware (rate limiting and security headers)
-# Rate limit: 60 requests per minute per IP (adjustable)
-app.add_middleware(RateLimitMiddleware, requests_per_minute=60)
-app.add_middleware(SecurityHeadersMiddleware)
-
 # Include authentication routes
 app.include_router(auth_router)
 
-# CORS middleware
+# CORS middleware - MUST be added before security middleware
 # Get allowed origins from environment variable or use defaults
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "").split(",") if os.getenv("CORS_ORIGINS") else [
     "https://stratum.daifend.ai",
@@ -68,6 +63,17 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+# Add security middleware AFTER CORS (middleware executes in reverse order)
+# Rate limit: 60 requests per minute per IP (adjustable)
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware, requests_per_minute=60)
+
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "service": "Stratum API"}
 
 # Initialize components (will be re-initialized with DB in endpoints)
 analyzer = CodeAnalyzer()

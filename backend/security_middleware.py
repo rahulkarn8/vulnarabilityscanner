@@ -25,8 +25,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.requests_per_minute = requests_per_minute
     
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        # Skip rate limiting for health checks and static files
-        if request.url.path in ["/", "/health", "/docs", "/openapi.json", "/redoc"]:
+        # Skip rate limiting for health checks, static files, and OPTIONS (CORS preflight)
+        if request.url.path in ["/", "/health", "/docs", "/openapi.json", "/redoc"] or request.method == "OPTIONS":
             return await call_next(request)
         
         client_ip = request.client.host if request.client else "unknown"
