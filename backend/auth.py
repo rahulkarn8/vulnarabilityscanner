@@ -1247,12 +1247,14 @@ async def github_callback(code: str, db: Session = Depends(get_db)):
     
     print(f"DEBUG: Created JWT token for GitHub user {user.id} (email: {user.email})")
     print(f"DEBUG: Token (first 50 chars): {jwt_token[:50]}...")
-    print(f"DEBUG: Redirecting to: {FRONTEND_URL}/?token={jwt_token[:50]}...&user_id={user.id}")
+    print(f"DEBUG: FRONTEND_URL: {FRONTEND_URL}")
+    
+    # Build redirect URL with token
+    redirect_url = f"{FRONTEND_URL}/?token={jwt_token}&user_id={user.id}"
+    print(f"DEBUG: Redirecting to: {redirect_url[:100]}...")
     
     # Redirect to frontend with token (use root path since there's no routing)
-    return RedirectResponse(
-        url=f"{FRONTEND_URL}/?token={jwt_token}&user_id={user.id}"
-    )
+    return RedirectResponse(url=redirect_url)
 
 @router.get("/google/login")
 async def google_login():
