@@ -465,7 +465,7 @@ function Header({ onAnalyzeDirectory, onAnalyzeFiles: _onAnalyzeFiles, onAnalyze
         const scanData = error.response.data?.detail || error.response.data
         if (scanData?.error === 'scan_limit_reached') {
           const scansUsed = scanData.scans_used || scanData.scan_count || 0
-          const scanLimit = scanData.scan_limit || 5
+          const scanLimit = scanData.scan_limit || 20
           setLocalLoading(false)
           setLoading(false)
           if (onScanLimitReached) {
@@ -603,7 +603,7 @@ function Header({ onAnalyzeDirectory, onAnalyzeFiles: _onAnalyzeFiles, onAnalyze
         const scanData = error.response.data?.detail || error.response.data
         if (scanData?.error === 'scan_limit_reached') {
           const scansUsed = scanData.scans_used || scanData.scan_count || 0
-          const scanLimit = scanData.scan_limit || 5
+          const scanLimit = scanData.scan_limit || 20
           setLocalLoading(false)
           setLoading(false)
           if (onScanLimitReached) {

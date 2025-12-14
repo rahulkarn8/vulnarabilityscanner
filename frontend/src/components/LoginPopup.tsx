@@ -12,7 +12,7 @@ interface LoginPopupProps {
   scanLimit?: number
 }
 
-function LoginPopup({ isOpen, onClose, scansUsed = 0, scanLimit = 5 }: LoginPopupProps) {
+function LoginPopup({ isOpen, onClose, scansUsed = 0, scanLimit = 20 }: LoginPopupProps) {
   const { login, isAuthenticated, token } = useAuth()
   const [isRegister, setIsRegister] = useState(false)
   const [email, setEmail] = useState('')

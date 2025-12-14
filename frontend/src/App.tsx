@@ -380,7 +380,7 @@ function App() {
           setScanLimitInfo(null)
         }}
         scansUsed={scanLimitInfo?.scansUsed || 0}
-        scanLimit={scanLimitInfo?.scanLimit || 5}
+        scanLimit={scanLimitInfo?.scanLimit || 20}
       />
     </div>
   )
