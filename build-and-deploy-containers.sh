@@ -139,7 +139,7 @@ gcloud run deploy "$BACKEND_SERVICE" \
     --max-instances 10 \
     --timeout 600 \
     --cpu-boost \
-    --set-env-vars-file="$TEMP_FLAGS_FILE" \
+    --env-vars-file="$TEMP_FLAGS_FILE" \
     --project="$PROJECT_ID"
 
 # Clean up temp file
