@@ -97,6 +97,36 @@ export HTTPS_PROXY=$HTTPS_PROXY_BACKUP
 
 # Deploy backend to Cloud Run FIRST (we need its URL for frontend build)
 echo -e "\n${GREEN}🚀 Deploying backend to Cloud Run...${NC}"
+
+# Prepare CORS_ORIGINS value
+CORS_ORIGINS_VALUE="${CORS_ORIGINS:-https://vulnerability-scanner-frontend-oi4goiciua-ew.a.run.app,https://stratum.daifend.ai}"
+echo "Setting CORS_ORIGINS=${CORS_ORIGINS_VALUE}"
+
+# Create a temporary flags file for environment variables (to handle CORS_ORIGINS with comma)
+TEMP_FLAGS_FILE=$(mktemp)
+cat > "$TEMP_FLAGS_FILE" << EOF
+DATABASE_URL: "${DATABASE_URL:-}"
+JWT_SECRET_KEY: "${JWT_SECRET_KEY:-}"
+GITHUB_CLIENT_ID: "${GITHUB_CLIENT_ID:-}"
+GITHUB_CLIENT_SECRET: "${GITHUB_CLIENT_SECRET:-}"
+GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
+GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:-}"
+OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+STRIPE_SECRET_KEY: "${STRIPE_SECRET_KEY:-}"
+STRIPE_PRICE_ID_BASIC: "${STRIPE_PRICE_ID_BASIC:-}"
+STRIPE_PRICE_ID_PRO: "${STRIPE_PRICE_ID_PRO:-}"
+ADMIN_API_KEY: "${ADMIN_API_KEY:-}"
+ADMIN_PASSWORD: "${ADMIN_PASSWORD:-}"
+SMTP_SERVER: "${SMTP_SERVER:-smtp.gmail.com}"
+SMTP_PORT: "${SMTP_PORT:-587}"
+SMTP_USERNAME: "${SMTP_USERNAME:-}"
+SMTP_PASSWORD: "${SMTP_PASSWORD:-ypht ltua gvdz lilj}"
+FROM_EMAIL: "${FROM_EMAIL:-}"
+SUPPORT_EMAIL: "${SUPPORT_EMAIL:-support@daifend.com}"
+FREE_SCAN_LIMIT: "${FREE_SCAN_LIMIT:-5}"
+CORS_ORIGINS: "${CORS_ORIGINS_VALUE}"
+EOF
+
 gcloud run deploy "$BACKEND_SERVICE" \
     --image "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/backend:latest" \
     --region "$REGION" \
@@ -109,8 +139,11 @@ gcloud run deploy "$BACKEND_SERVICE" \
     --max-instances 10 \
     --timeout 600 \
     --cpu-boost \
-    --set-env-vars "DATABASE_URL=${DATABASE_URL:-},JWT_SECRET_KEY=${JWT_SECRET_KEY:-},GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID:-},GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET:-},GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-},GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-},OPENAI_API_KEY=${OPENAI_API_KEY:-},STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-},STRIPE_PRICE_ID_BASIC=${STRIPE_PRICE_ID_BASIC:-},STRIPE_PRICE_ID_PRO=${STRIPE_PRICE_ID_PRO:-},ADMIN_API_KEY=${ADMIN_API_KEY:-},ADMIN_PASSWORD=${ADMIN_PASSWORD:-},SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com},SMTP_PORT=${SMTP_PORT:-587},SMTP_USERNAME=${SMTP_USERNAME:-},SMTP_PASSWORD=${SMTP_PASSWORD:-ypht ltua gvdz lilj},FROM_EMAIL=${FROM_EMAIL:-},SUPPORT_EMAIL=${SUPPORT_EMAIL:-support@daifend.com},FREE_SCAN_LIMIT=${FREE_SCAN_LIMIT:-5}" \
+    --set-env-vars-file="$TEMP_FLAGS_FILE" \
     --project="$PROJECT_ID"
+
+# Clean up temp file
+rm -f "$TEMP_FLAGS_FILE"
 
 # Get backend URL (needed for frontend build and OAuth redirect URIs)
 BACKEND_URL=$(gcloud run services describe "$BACKEND_SERVICE" --region="$REGION" --format="value(status.url)" --project="$PROJECT_ID")
